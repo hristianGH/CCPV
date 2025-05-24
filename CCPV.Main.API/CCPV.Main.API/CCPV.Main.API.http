@@ -1,0 +1,6 @@
+@CCPV.Main.API_HostAddress = http://localhost:5239
+
+GET {{CCPV.Main.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
