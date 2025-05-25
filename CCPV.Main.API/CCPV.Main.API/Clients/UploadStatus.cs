@@ -2,7 +2,7 @@
 {
     public class UploadStatus
     {
-        public bool Completed { get; set; }
+        public string Status { get; set; }
         public string? Checksum { get; set; }
         public string? Message { get; set; }
     }

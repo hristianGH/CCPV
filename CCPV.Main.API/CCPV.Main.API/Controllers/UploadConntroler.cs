@@ -20,6 +20,10 @@ namespace CCPV.Main.API.Controllers
             {
                 return BadRequest("Invalid parameters.");
             }
+            if (chunkNumber == 0)
+            {
+                await uploadHandler.InitiateUpload(uploadId);
+            }
             try
             {
                 await uploadHandler.UploadChunk(uploadId, chunkNumber, fileChunk);
@@ -38,16 +42,16 @@ namespace CCPV.Main.API.Controllers
                 return BadRequest("UploadId required");
 
             // Enqueue background job to assemble & process
-            uploadHandler.ExecuteAsync((request.UploadId));
-
+            uploadHandler.FinalizeUpload((request.UploadId));
+            // TODO begin to handle the upload in the background
             return Accepted(new { message = "Upload complete, processing started." });
         }
 
         [HttpGet("status/{uploadId}")]
-        public IActionResult GetStatus(string uploadId)
+        public async Task<IActionResult> GetStatus(string uploadId)
         {
             // Return upload & processing status from DB or memory cache
-            Clients.UploadStatus? status = UploadStatusStore.GetStatus(uploadId);
+            Clients.UploadStatus? status = await uploadHandler.GetStatus(uploadId);
             if (status == null)
                 return NotFound();
 
