@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.14.36121.58
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCPV.Main.API", "CCPV.Main.API\CCPV.Main.API.csproj", "{CD50A39A-1977-4285-8293-71D213FE4D8B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F6DB8DFD-90C8-465C-BE72-8E0D481A00B4} = {F6DB8DFD-90C8-465C-BE72-8E0D481A00B4}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCPV.Main.Background", "CCPV.Main.Background\CCPV.Main.Background.csproj", "{F6DB8DFD-90C8-465C-BE72-8E0D481A00B4}"
 EndProject

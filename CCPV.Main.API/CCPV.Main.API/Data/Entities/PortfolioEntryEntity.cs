@@ -2,7 +2,7 @@
 
 namespace CCPV.Main.API.Data.Entities
 {
-    public class PortfolioEntry
+    public class PortfolioEntryEntity
     {
         public Guid Id { get; set; }
 
@@ -19,7 +19,7 @@ namespace CCPV.Main.API.Data.Entities
         public Guid PortfolioId { get; set; }
 
         [Required]
-        public Portfolio Portfolio { get; set; } = null!;
+        public PortfolioEntity Portfolio { get; set; } = null!;
     }
 
 }

@@ -10,21 +10,22 @@ namespace CCPV.Main.API.Data
         {
         }
 
-        public DbSet<Portfolio> Portfolios { get; set; }
-        public DbSet<User> Users { get; set; }
-        public DbSet<PortfolioEntry> PortfolioEntries { get; set; }
+        public DbSet<PortfolioEntity> Portfolios { get; set; }
+        public DbSet<UserEntity> Users { get; set; }
+        public DbSet<PortfolioEntryEntity> PortfolioEntries { get; set; }
+        public DbSet<UploadStatusEntity> UploadStatuses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Fluent API for relationships (optional if using conventions)
 
-            modelBuilder.Entity<User>()
+            modelBuilder.Entity<UserEntity>()
                 .HasMany(u => u.Portfolios)
                 .WithOne(p => p.User)
                 .HasForeignKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Portfolio>()
+            modelBuilder.Entity<PortfolioEntity>()
                 .HasMany(p => p.Entries)
                 .WithOne(e => e.Portfolio)
                 .HasForeignKey(e => e.PortfolioId)
