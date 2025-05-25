@@ -1,20 +1,21 @@
 using CCPV.Main.API.Data;
+using CCPV.Main.API.Misc;
 using Microsoft.EntityFrameworkCore;
-using System;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddDbContext<ApiDbContext>(options =>
-    options.UseSqlServer("local")); 
 
+builder.Services.AddDbContext<ApiDbContext>(options =>
+    options.UseSqlServer(Environment.GetEnvironmentVariable(Constants.SQLConnection) ??
+    builder.Configuration.GetConnectionString(Constants.DefaultConnection)));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
