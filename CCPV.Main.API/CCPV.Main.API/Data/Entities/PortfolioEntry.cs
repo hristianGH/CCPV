@@ -21,5 +21,5 @@ namespace CCPV.Main.API.Data.Entities
         [Required]
         public Portfolio Portfolio { get; set; } = null!;
     }
-    s
+
 }

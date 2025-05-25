@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace CCPV.Main.Background
 {
@@ -19,20 +20,19 @@ namespace CCPV.Main.Background
             {
                 try
                 {
-                    using var scope = _serviceProvider.CreateScope();
-                    var db = scope.ServiceProvider.GetRequiredService<ApiDbContext>();
+                    using IServiceScope scope = _serviceProvider.CreateScope();
 
-                    var userCount = await db.Users.CountAsync(stoppingToken);
-                    var portfolioCount = await db.Portfolios.CountAsync(stoppingToken);
+                    //var userCount = await db.Users.CountAsync(stoppingToken);
+                    //var portfolioCount = await db.Portfolios.CountAsync(stoppingToken);
 
-                    _logger.LogInformation("Metrics: Users={UserCount}, Portfolios={PortfolioCount}", userCount, portfolioCount);
+                    //_logger.LogInformation("Metrics: Users={UserCount}, Portfolios={PortfolioCount}", userCount, portfolioCount);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to log metrics.");
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken); // Run every 30 seconds
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }
         }
     }
