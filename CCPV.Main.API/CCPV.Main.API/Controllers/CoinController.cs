@@ -1,30 +1,33 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CCPV.Main.API.Handler;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CCPV.Main.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
-    public class CoinController : ControllerBase
+    [Route("api/coin")]
+    public class CoinController(ICoinHandler coinService, ILogger<CoinController> logger) : ControllerBase
     {
-        [ApiController]
-        [Route("api/coin")]
-        public class CoinController(ICoinHandler coinService) : ControllerBase
+        [HttpGet("prices")]
+        public async Task<IActionResult> GetPrices([FromQuery] bool forceRefresh = false)
         {
-            [HttpGet("prices")]
-            public async Task<IActionResult> GetPrices([FromQuery] bool forceRefresh = false)
+            try
             {
-                try
-                {
-                    var prices = await coinService.GetPricesAsync(forceRefresh);
-                    return Ok(prices);
-                }
-                catch (Exception ex)
-                {
-                    // Log error
-                    return StatusCode(500, "Failed to retrieve coin prices.");
-                }
+                logger.LogInformation("START: CoinController.GetPrices");
+
+                IEnumerable<Misc.CoinPrice> prices = await coinService.GetPricesAsync(forceRefresh);
+                return Ok(prices);
+            }
+            catch (Exception ex)
+            {
+                // logthe error if you have a logger injected
+                logger.LogError(ex, "Failed to fetch coin prices.");
+                throw;
+            }
+            finally
+            {
+                logger.LogInformation("END: CoinController.GetPrices");
             }
         }
-
     }
+
 }

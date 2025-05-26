@@ -1,10 +1,11 @@
-﻿using CCPV.Main.API.Misc;
+﻿using CCPV.Main.API.Clients;
+using CCPV.Main.API.Clients.Models;
+using CCPV.Main.API.Misc;
 using Microsoft.Extensions.Caching.Memory;
-using System.Text.Json;
 
 namespace CCPV.Main.API.Handler
 {
-    public class CoinHandler(HttpClient httpClient, IMemoryCache cache, ILogger<CoinHandler> logger) : ICoinHandler
+    public class CoinHandler(ICoinloreApi coinloreApi, IMemoryCache cache, ILogger<CoinHandler> logger) : ICoinHandler
     {
         private const string CoinPricesCacheKey = "CoinPrices";
         private readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
@@ -16,22 +17,15 @@ namespace CCPV.Main.API.Handler
                 return cached;
             }
             // Fetch from Coinlore API
-            HttpResponseMessage response = await httpClient.GetAsync("https://api.coinlore.net/api/tickers/");
-            response.EnsureSuccessStatusCode();
+            CoinloreResponse response = await coinloreApi.GetTickersAsync();
 
-            using Stream stream = await response.Content.ReadAsStreamAsync();
-            using JsonDocument doc = await JsonDocument.ParseAsync(stream);
-
-            List<CoinPrice> prices = doc.RootElement
-                            .GetProperty("data")
-                            .EnumerateArray()
+            List<CoinPrice> prices = [.. response.Data
                             .Select(e => new CoinPrice
                             {
-                                Symbol = e.GetProperty("symbol").GetString()!,
-                                Name = e.GetProperty("name").GetString()!,
-                                PriceUsd = decimal.Parse(e.GetProperty("price_usd").GetString()!)
-                            })
-                            .ToList();
+                                Symbol = e.Symbol,
+                                Name = e.Name,
+                                PriceUsd = e.PriceUsd
+                            })];
 
             cache.Set(CoinPricesCacheKey, prices, CacheDuration);
 
