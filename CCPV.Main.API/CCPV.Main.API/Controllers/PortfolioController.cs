@@ -1,6 +1,6 @@
-using CCPV.Main.API.Clients;
 using CCPV.Main.API.Data.Entities;
 using CCPV.Main.API.Handler;
+using CCPV.Main.API.Misc;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CCPV.Main.API.Controllers
@@ -33,7 +33,6 @@ namespace CCPV.Main.API.Controllers
                 return Ok(new
                 {
                     message = "Portfolio uploaded successfully.",
-                    userId = userId,
                     portfolioName = portfolioName
                 });
             }

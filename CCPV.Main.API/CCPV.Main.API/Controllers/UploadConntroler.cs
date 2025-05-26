@@ -1,5 +1,5 @@
-﻿using CCPV.Main.API.Clients;
-using CCPV.Main.API.Handler;
+﻿using CCPV.Main.API.Handler;
+using CCPV.Main.API.Misc;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CCPV.Main.API.Controllers
@@ -58,7 +58,7 @@ namespace CCPV.Main.API.Controllers
         {
             // TODO add user passing here so we can restrict access to the uploadId
 
-            Clients.UploadStatus? status = await uploadHandler.GetStatus(uploadId);
+            UploadStatus? status = await uploadHandler.GetStatus(uploadId);
             if (status == null)
                 return NotFound();
 

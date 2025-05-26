@@ -1,4 +1,4 @@
-﻿namespace CCPV.Main.API.Clients
+﻿namespace CCPV.Main.API.Misc
 {
     public class UploadStatus
     {

@@ -1,10 +1,12 @@
-﻿using CCPV.Main.API.Data;
+﻿using CCPV.Main.API.Clients;
+using CCPV.Main.API.Data;
 using CCPV.Main.API.Handler;
 using CCPV.Main.API.Metrics;
 using CCPV.Main.API.Middleware;
 using CCPV.Main.API.Misc;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
+using Refit;
 
 public class Startup
 {
@@ -24,6 +26,14 @@ public class Startup
         services.AddDbContext<ApiDbContext>(options =>
             options.UseSqlServer(Environment.GetEnvironmentVariable(Constants.RemoteSqlConnection) ??
             _configuration.GetConnectionString(Constants.DefaultConnection)));
+
+        services.AddRefitClient<ICoinloreApi>()
+        .ConfigureHttpClient(c =>
+        {
+            c.BaseAddress = new Uri(Constants.CoinloreUri);
+        });
+
+        services.AddMemoryCache();
 
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
