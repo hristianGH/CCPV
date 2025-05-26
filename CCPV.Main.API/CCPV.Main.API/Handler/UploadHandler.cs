@@ -11,43 +11,43 @@ namespace CCPV.Main.API.Handler
         private const string _finalFileName = "final-uploaded-file.dat";
         private const string _uploads = "Uploads";
 
-        /// <inheritdoc/>
-        public async Task LightweightUpload(string uploadId, IFormFile file)
-        {
-            string dir = CreateDirAsync(uploadId);
-            UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
-            if (statusEntity != null)
-            {
-                throw new InvalidOperationException($"Upload with ID {uploadId} already exists. Please use a unique uploadId.");
-            }
-            statusEntity = new UploadStatusEntity
-            {
-                UploadId = uploadId,
-                LastUpdated = DateTime.UtcNow,
-                TotalChunks = 1
-            };
-            db.UploadStatuses.Add(statusEntity);
-            await db.SaveChangesAsync();
-            try
-            {
-                using FileStream stream = File.Create(dir);
-                await file.CopyToAsync(stream);
+        ///// <inheritdoc/>
+        //public async Task LightweightUpload(string uploadId, IFormFile file)
+        //{
+        //    string dir = CreateDirAsync(uploadId);
+        //    UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
+        //    if (statusEntity != null)
+        //    {
+        //        throw new InvalidOperationException($"Upload with ID {uploadId} already exists. Please use a unique uploadId.");
+        //    }
+        //    statusEntity = new UploadStatusEntity
+        //    {
+        //        UploadId = uploadId,
+        //        LastUpdated = DateTime.UtcNow,
+        //        TotalChunks = 1
+        //    };
+        //    db.UploadStatuses.Add(statusEntity);
+        //    await db.SaveChangesAsync();
+        //    try
+        //    {
+        //        using FileStream stream = File.Create(dir);
+        //        await file.CopyToAsync(stream);
 
-                string checksum = await CalculateSHA256Async(dir);
-                statusEntity.Status = UploadStatusEnum.Completed.ToString();
-                statusEntity.Checksum = checksum;
-                statusEntity.Message = "Upload assembled and verified successfully.";
-                statusEntity.LastUpdated = DateTime.UtcNow;
-            }
-            catch (Exception ex)
-            {
-                //TODO Figure out how to proceed with failed uploads
-                statusEntity.Status = UploadStatusEnum.Failed.ToString();
-                statusEntity.Message = $"Failed to process upload: {ex.Message}";
-                statusEntity.LastUpdated = DateTime.UtcNow;
-                throw;
-            }
-        }
+        //        string checksum = await CalculateSHA256Async(dir);
+        //        statusEntity.Status = UploadStatusEnum.Completed.ToString();
+        //        statusEntity.Checksum = checksum;
+        //        statusEntity.Message = "Upload assembled and verified successfully.";
+        //        statusEntity.LastUpdated = DateTime.UtcNow;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //TODO Figure out how to proceed with failed uploads
+        //        statusEntity.Status = UploadStatusEnum.Failed.ToString();
+        //        statusEntity.Message = $"Failed to process upload: {ex.Message}";
+        //        statusEntity.LastUpdated = DateTime.UtcNow;
+        //        throw;
+        //    }
+        //}
 
         /// <inheritdoc/>
         public async Task InitiateHeavyUpload(string uploadId, int totalChunks)
@@ -96,6 +96,7 @@ namespace CCPV.Main.API.Handler
                 statusEntity.Checksum = checksum;
                 statusEntity.Message = "Upload assembled and verified successfully.";
                 statusEntity.LastUpdated = DateTime.UtcNow;
+                statusEntity.FilePath = uploadDir;
             }
             catch (Exception ex)
             {
@@ -107,7 +108,13 @@ namespace CCPV.Main.API.Handler
 
             await db.SaveChangesAsync();
             // Start a background job to process the final file
-            return statusEntity;
+            return new()
+            {
+                Status = statusEntity.Status,
+                Checksum = statusEntity.Checksum,
+                Message = statusEntity.Message,
+                FilePath = statusEntity.FilePath
+            };
         }
 
 

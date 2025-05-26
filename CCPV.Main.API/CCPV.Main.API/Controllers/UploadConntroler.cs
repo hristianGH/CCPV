@@ -20,6 +20,7 @@ namespace CCPV.Main.API.Controllers
             {
                 return BadRequest("Invalid parameters.");
             }
+            // TODO add user passing here so we can restrict access to the uploadId
             if (chunkNumber == 0)
             {
                 await uploadHandler.InitiateHeavyUpload(uploadId, totalChunks);
@@ -36,21 +37,27 @@ namespace CCPV.Main.API.Controllers
         }
 
         [HttpPost("complete")]
-        public IActionResult CompleteUpload([FromBody] CompleteUploadRequest request)
+        public async Task<IActionResult> CompleteUpload([FromBody] CompleteUploadRequest request)
         {
             if (string.IsNullOrEmpty(request.UploadId))
                 return BadRequest("UploadId required");
+            // TODO add user passing here so we can restrict access to the uploadId
 
-            // Enqueue background job to assemble & process
-            uploadHandler.FinalizeUpload(request.UploadId);
-            // TODO begin to handle the upload in the background
-            return Accepted(new { message = "Upload complete, processing started." });
+            UploadStatus response = await uploadHandler.FinalizeUpload(request.UploadId);
+
+            return Accepted(new
+            {
+                message = response.Message,
+                filePath = response.FilePath ?? string.Empty,
+                status = response.Status
+            });
         }
 
         [HttpGet("status/{uploadId}")]
         public async Task<IActionResult> GetStatus(string uploadId)
         {
-            // Return upload & processing status from DB or memory cache
+            // TODO add user passing here so we can restrict access to the uploadId
+
             Clients.UploadStatus? status = await uploadHandler.GetStatus(uploadId);
             if (status == null)
                 return NotFound();

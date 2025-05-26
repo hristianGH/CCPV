@@ -25,4 +25,8 @@
     <ProjectReference Include="..\CCPV.Main.Background\CCPV.Main.Background.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Logs\" />
+  </ItemGroup>
+
 </Project>

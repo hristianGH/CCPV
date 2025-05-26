@@ -5,9 +5,9 @@ namespace CCPV.Main.API.Handler
     public interface IPortfolioHandler
     {
         public Task<PortfolioEntity> UploadPortfolioAsync(Guid userId, string portfolioName, IFormFile file);
-        Task ProcessPortfolioAsync(Guid userId, PortfolioEntity portfolio);
-        Task<PortfolioEntity?> GetNoTrackingPortfolioByIdAsync(Guid id);
+        Task<PortfolioEntity?> GetNoTrackingPortfolioByIdAsync(Guid userId, Guid id);
         Task<IEnumerable<PortfolioEntity>> GetPortfoliosByUserIdAsync(Guid userId);
-        Task<bool> DeletePortfolioAsync(Guid id);
+        public Task<PortfolioEntity> UploadPortfolioFromPathAsync(Guid userId, string portfolioName, string filePath);
+        public Task DeletePortfolioAsync(Guid userId, Guid id);
     }
 }

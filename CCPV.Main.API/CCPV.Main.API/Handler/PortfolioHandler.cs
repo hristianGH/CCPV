@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CCPV.Main.API.Handler
 {
-    public class PortfolioHandler(ApiDbContext dbContext) : IPortfolioHandler
+    public class PortfolioHandler(ApiDbContext dbContext, IUserHandler userHandler) : IPortfolioHandler
     {
         public async Task<PortfolioEntity> UploadPortfolioAsync(Guid userId, string portfolioName, IFormFile file)
         {
             if (file == null || file.Length == 0)
                 throw new ArgumentException("File is empty.");
 
-            List<PortfolioEntryEntity> entries = await ParsePortfolioFileAsync(file);
+            List<PortfolioEntryEntity> entries = await ParsePortfolioFileAsync(file.OpenReadStream());
 
             PortfolioEntity portfolio = new()
             {
@@ -34,11 +34,38 @@ namespace CCPV.Main.API.Handler
             return portfolio;
         }
 
-        private async Task<List<PortfolioEntryEntity>> ParsePortfolioFileAsync(IFormFile file)
+        public async Task<PortfolioEntity> UploadPortfolioFromPathAsync(Guid userId, string portfolioName, string filePath)
+        {
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException("Portfolio file not found.", filePath);
+
+            using FileStream stream = new(filePath, FileMode.Open, FileAccess.Read);
+            List<PortfolioEntryEntity> entries = await ParsePortfolioFileAsync(stream);
+
+            PortfolioEntity portfolio = new()
+            {
+                Id = Guid.NewGuid(),
+                Name = portfolioName,
+                CreatedAt = DateTime.UtcNow,
+                UserId = userId,
+                Entries = entries
+            };
+
+            foreach (PortfolioEntryEntity entry in entries)
+            {
+                entry.Id = Guid.NewGuid();
+                entry.PortfolioId = portfolio.Id;
+            }
+
+            dbContext.Portfolios.Add(portfolio);
+            await dbContext.SaveChangesAsync();
+
+            return portfolio;
+        }
+
+        private async Task<List<PortfolioEntryEntity>> ParsePortfolioFileAsync(Stream stream)
         {
             List<PortfolioEntryEntity> entries = [];
-
-            using Stream stream = file.OpenReadStream();
             using StreamReader reader = new(stream);
 
             string? line;
@@ -71,7 +98,7 @@ namespace CCPV.Main.API.Handler
             return entries;
         }
 
-        public async Task<PortfolioEntity?> GetNoTrackingPortfolioByIdAsync(Guid id)
+        public async Task<PortfolioEntity?> GetNoTrackingPortfolioByIdAsync(Guid userId, Guid id)
         {
             return await dbContext.Portfolios
                 .AsNoTracking()
@@ -88,23 +115,16 @@ namespace CCPV.Main.API.Handler
                 .ToListAsync();
         }
 
-        public async Task<bool> DeletePortfolioAsync(Guid id)
+        public async Task DeletePortfolioAsync(Guid userId, Guid id)
         {
             PortfolioEntity? portfolio = await dbContext.Portfolios.FindAsync(id);
-            if (portfolio == null) return false;
-            // log not found error here
-
-
+            if (portfolio == null)
+            {
+                throw new KeyNotFoundException($"Portfolio with ID {id} not found.");
+            }
 
             dbContext.Portfolios.Remove(portfolio);
             await dbContext.SaveChangesAsync();
-
-            return true;
-        }
-
-        public Task ProcessPortfolioAsync(Guid userId, PortfolioEntity portfolio)
-        {
-            throw new NotImplementedException();
         }
     }
 }
