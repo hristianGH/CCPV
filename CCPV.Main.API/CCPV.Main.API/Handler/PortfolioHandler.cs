@@ -4,15 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CCPV.Main.API.Handler
 {
-    public class PortfolioHandler : IPortfolioHandler
+    public class PortfolioHandler(ApiDbContext dbContext) : IPortfolioHandler
     {
-        private readonly ApiDbContext _dbContext;
-
-        public PortfolioHandler(ApiDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
-
         public async Task<PortfolioEntity> UploadPortfolioAsync(Guid userId, string portfolioName, IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -35,8 +28,8 @@ namespace CCPV.Main.API.Handler
                 entry.PortfolioId = portfolio.Id;
             }
 
-            _dbContext.Portfolios.Add(portfolio);
-            await _dbContext.SaveChangesAsync();
+            dbContext.Portfolios.Add(portfolio);
+            await dbContext.SaveChangesAsync();
 
             return portfolio;
         }
@@ -78,16 +71,18 @@ namespace CCPV.Main.API.Handler
             return entries;
         }
 
-        public async Task<PortfolioEntity?> GetPortfolioByIdAsync(Guid id)
+        public async Task<PortfolioEntity?> GetNoTrackingPortfolioByIdAsync(Guid id)
         {
-            return await _dbContext.Portfolios
+            return await dbContext.Portfolios
+                .AsNoTracking()
                 .Include(p => p.Entries)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<IEnumerable<PortfolioEntity>> GetPortfoliosByUserIdAsync(Guid userId)
         {
-            return await _dbContext.Portfolios
+            return await dbContext.Portfolios
+                .AsNoTracking()
                 .Include(p => p.Entries)
                 .Where(p => p.UserId == userId)
                 .ToListAsync();
@@ -95,13 +90,21 @@ namespace CCPV.Main.API.Handler
 
         public async Task<bool> DeletePortfolioAsync(Guid id)
         {
-            PortfolioEntity? portfolio = await _dbContext.Portfolios.FindAsync(id);
+            PortfolioEntity? portfolio = await dbContext.Portfolios.FindAsync(id);
             if (portfolio == null) return false;
+            // log not found error here
 
-            _dbContext.Portfolios.Remove(portfolio);
-            await _dbContext.SaveChangesAsync();
+
+
+            dbContext.Portfolios.Remove(portfolio);
+            await dbContext.SaveChangesAsync();
 
             return true;
+        }
+
+        public Task ProcessPortfolioAsync(Guid userId, PortfolioEntity portfolio)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -6,39 +6,69 @@ using System.Security.Cryptography;
 
 namespace CCPV.Main.API.Handler
 {
-    public class UploadHandler : IUploadHandler
+    public class UploadHandler(ApiDbContext db, ILogger<UploadHandler> logger) : IUploadHandler
     {
         private const string _finalFileName = "final-uploaded-file.dat";
         private const string _uploads = "Uploads";
 
-        private readonly ApiDbContext _db;
-
-        public UploadHandler(ApiDbContext db)
+        /// <inheritdoc/>
+        public async Task LightweightUpload(string uploadId, IFormFile file)
         {
-            _db = db;
-        }
-        public async Task InitiateUpload(string uploadId)
-        {
-            string uploadDir = Path.Combine(_uploads, uploadId);
-            if (Directory.Exists(uploadDir))
-            {
-                throw new InvalidOperationException($"Upload directory {uploadDir} already exists. Please use a unique uploadId.");
-            }
-            Directory.CreateDirectory(uploadDir);
-            UploadStatusEntity? statusEntity = await _db.UploadStatuses.FindAsync(uploadId);
+            string dir = CreateDirAsync(uploadId);
+            UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
             if (statusEntity != null)
             {
-                // If the upload already exists, we throw an error
                 throw new InvalidOperationException($"Upload with ID {uploadId} already exists. Please use a unique uploadId.");
             }
             statusEntity = new UploadStatusEntity
             {
                 UploadId = uploadId,
-                LastUpdated = DateTime.UtcNow
+                LastUpdated = DateTime.UtcNow,
+                TotalChunks = 1
             };
-            _db.UploadStatuses.Add(statusEntity);
+            db.UploadStatuses.Add(statusEntity);
+            await db.SaveChangesAsync();
+            try
+            {
+                using FileStream stream = File.Create(dir);
+                await file.CopyToAsync(stream);
+
+                string checksum = await CalculateSHA256Async(dir);
+                statusEntity.Status = UploadStatusEnum.Completed.ToString();
+                statusEntity.Checksum = checksum;
+                statusEntity.Message = "Upload assembled and verified successfully.";
+                statusEntity.LastUpdated = DateTime.UtcNow;
+            }
+            catch (Exception ex)
+            {
+                //TODO Figure out how to proceed with failed uploads
+                statusEntity.Status = UploadStatusEnum.Failed.ToString();
+                statusEntity.Message = $"Failed to process upload: {ex.Message}";
+                statusEntity.LastUpdated = DateTime.UtcNow;
+                throw;
+            }
         }
 
+        /// <inheritdoc/>
+        public async Task InitiateHeavyUpload(string uploadId, int totalChunks)
+        {
+            CreateDirAsync(uploadId);
+            UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
+            if (statusEntity != null)
+            {
+                throw new InvalidOperationException($"Upload with ID {uploadId} already exists. Please use a unique uploadId.");
+            }
+            statusEntity = new UploadStatusEntity
+            {
+                UploadId = uploadId,
+                LastUpdated = DateTime.UtcNow,
+                TotalChunks = totalChunks
+            };
+            db.UploadStatuses.Add(statusEntity);
+            await db.SaveChangesAsync();
+        }
+
+        /// <inheritdoc/>
         public async Task UploadChunk(string uploadId, int chunkNumber, IFormFile fileChunk)
         {
             string uploadDir = Path.Combine(_uploads, uploadId);
@@ -48,19 +78,20 @@ namespace CCPV.Main.API.Handler
             await fileChunk.CopyToAsync(stream);
         }
 
-        public async Task FinalizeUpload(string uploadId)
+        /// <inheritdoc/>
+        public async Task<UploadStatus> FinalizeUpload(string uploadId)
         {
             string uploadDir = Path.Combine(_uploads, uploadId);
             string finalFile = Path.Combine(uploadDir, _finalFileName);
             int totalChunks = Directory.GetFiles(uploadDir, "chunk_*").Length;
 
-            UploadStatusEntity? statusEntity = await _db.UploadStatuses.FindAsync(uploadId);
-
+            UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
             try
             {
+                ValidateAllChunksExist(uploadDir, statusEntity.TotalChunks);
                 await AssembleChunksAsync(uploadDir, totalChunks, finalFile);
                 string checksum = await CalculateSHA256Async(finalFile);
-
+                // TO DO this code can be extended to a repository
                 statusEntity.Status = UploadStatusEnum.Completed.ToString();
                 statusEntity.Checksum = checksum;
                 statusEntity.Message = "Upload assembled and verified successfully.";
@@ -74,36 +105,59 @@ namespace CCPV.Main.API.Handler
                 statusEntity.LastUpdated = DateTime.UtcNow;
             }
 
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
+            // Start a background job to process the final file
+            return statusEntity;
         }
+
+
         public async Task<UploadStatus> GetStatus(string uploadId)
         {
-            UploadStatusEntity? statusEntity = await _db.UploadStatuses.FindAsync(uploadId);
+            UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
             return statusEntity != null
                 ? new UploadStatus
                 {
-                    Status = Enum.TryParse<UploadStatusEnum>(statusEntity.Status, out UploadStatusEnum status) ? status : UploadStatusEnum.Unknown,
+                    Status = Enum.TryParse(statusEntity.Status, out UploadStatusEnum status)
+                    ? status.ToString() : UploadStatusEnum.Unknown.ToString(),
                     Checksum = statusEntity.Checksum,
                     Message = statusEntity.Message,
                 }
                 : throw new KeyNotFoundException($"Upload with ID {uploadId} not found.");
-
         }
+
+        private void ValidateAllChunksExist(string uploadDir, int totalChunks)
+        {
+            for (int i = 1; i <= totalChunks; i++)
+            {
+                string chunkPath = Path.Combine(uploadDir, $"chunk_{i}");
+                if (!File.Exists(chunkPath))
+                {
+                    throw new FileNotFoundException($"Missing chunk {i}. Expected at path: {chunkPath}");
+                }
+            }
+        }
+
         private async Task AssembleChunksAsync(string uploadDir, int totalChunks, string finalFilePath)
         {
             if (!Directory.Exists(uploadDir))
                 throw new DirectoryNotFoundException($"Upload directory {uploadDir} not found.");
 
             using FileStream finalStream = new(finalFilePath, FileMode.Create, FileAccess.Write);
-
-            for (int i = 1; i <= totalChunks; i++)
+            try
             {
-                string chunkPath = Path.Combine(uploadDir, $"chunk_{i}");
-                if (!File.Exists(chunkPath))
-                    throw new FileNotFoundException($"Chunk file {chunkPath} is missing.");
+                for (int i = 1; i <= totalChunks; i++)
+                {
+                    string chunkPath = Path.Combine(uploadDir, $"chunk_{i}");
+                    if (!File.Exists(chunkPath))
+                        throw new FileNotFoundException($"Chunk file {chunkPath} is missing.");
 
-                using FileStream chunkStream = new(chunkPath, FileMode.Open, FileAccess.Read);
-                await chunkStream.CopyToAsync(finalStream);
+                    using FileStream chunkStream = new(chunkPath, FileMode.Open, FileAccess.Read);
+                    await chunkStream.CopyToAsync(finalStream);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to assemble chunks: {ex.Message}", ex);
             }
         }
 
@@ -113,6 +167,17 @@ namespace CCPV.Main.API.Handler
             using FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read);
             byte[] hash = await sha256.ComputeHashAsync(fileStream);
             return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+        }
+
+        private string CreateDirAsync(string uploadId)
+        {
+            string uploadDir = Path.Combine(_uploads, uploadId);
+            if (Directory.Exists(uploadDir))
+            {
+                throw new InvalidOperationException($"Upload directory {uploadDir} already exists. Please use a unique uploadId.");
+            }
+            Directory.CreateDirectory(uploadDir);
+            return uploadDir;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using CCPV.Main.Background;
+﻿using CCPV.Main.API.Handler;
+using CCPV.Main.Background;
 using Prometheus;
 
 namespace CCPV.Main.API.Metrics
@@ -20,19 +21,10 @@ namespace CCPV.Main.API.Metrics
         public override void UpdateMetrics()
         {
             base.UpdateMetrics();
-
-            // Example: ActiveConnections could be set from DB connection pool info
-            // ActiveConnections.Set(GetActiveDbConnections());
-
-            // Example: Query database for counts
-            // PortfolioCount.Set(GetPortfolioCountFromDb());
-            // UserCount.Set(GetUserCountFromDb());
-
-            // Example: CachedCoinPrices - update from cache service
-            // CachedCoinPrices.Set(GetCachedCoinPricesCount());
-
-            // PortfoliosRecalculated - increment or set after recalculation
-            // PortfoliosRecalculated.Set(GetRecalculatedCount());
+        }
+        public void IncrementExceptionCount()
+        {
+            ApiErrorsTotal.Inc();
         }
     }
 }

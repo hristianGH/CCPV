@@ -1,6 +1,7 @@
 ﻿using CCPV.Main.API.Data;
 using CCPV.Main.API.Handler;
 using CCPV.Main.API.Metrics;
+using CCPV.Main.API.Middleware;
 using CCPV.Main.API.Misc;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
@@ -29,7 +30,7 @@ public class Startup
 
         // Register your services and metrics here
         services.AddScoped<IPortfolioHandler, PortfolioHandler>();
-        services.AddSingleton<APIMetricsCollector>();
+        services.AddScoped<APIMetricsCollector>();
     }
 
     public void Configure(IApplicationBuilder app)
@@ -39,7 +40,7 @@ public class Startup
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
         app.UseHttpsRedirection();
         app.UseHttpMetrics();
         app.UseRouting();

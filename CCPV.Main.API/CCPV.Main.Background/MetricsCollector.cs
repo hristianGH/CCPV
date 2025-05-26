@@ -11,19 +11,6 @@ namespace CCPV.Main.Background
         public virtual void UpdateMetrics()
         {
             ThreadCount.Set(System.Diagnostics.Process.GetCurrentProcess().Threads.Count);
-
-            // Example: ActiveConnections could be set from DB connection pool info
-            // ActiveConnections.Set(GetActiveDbConnections());
-
-            // Example: Query database for counts
-            // PortfolioCount.Set(GetPortfolioCountFromDb());
-            // UserCount.Set(GetUserCountFromDb());
-
-            // Example: CachedCoinPrices - update from cache service
-            // CachedCoinPrices.Set(GetCachedCoinPricesCount());
-
-            // PortfoliosRecalculated - increment or set after recalculation
-            // PortfoliosRecalculated.Set(GetRecalculatedCount());
         }
     }
 }

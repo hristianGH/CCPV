@@ -13,6 +13,8 @@ namespace CCPV.Main.API.Data.Entities
 
         public string? Message { get; set; }
 
+        public int TotalChunks { get; set; }
+
         [Required]
         public DateTime LastUpdated { get; set; }
     }

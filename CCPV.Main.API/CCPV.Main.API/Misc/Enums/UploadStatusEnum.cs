@@ -4,6 +4,7 @@
     {
         Completed,
         Failed,
-        Cancelled
+        Cancelled,
+        Unknown
     }
 }
