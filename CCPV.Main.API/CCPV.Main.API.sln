@@ -10,6 +10,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCPV.Main.API", "CCPV.Main.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCPV.Main.Background", "CCPV.Main.Background\CCPV.Main.Background.csproj", "{F6DB8DFD-90C8-465C-BE72-8E0D481A00B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CCPV.Main.Test", "CCPV.Main.Test\CCPV.Main.Test.csproj", "{8D7A0BA4-01DB-41CA-8F69-ADC12F3E3C80}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD50A39A-1977-4285-8293-71D213FE4D8B} = {CD50A39A-1977-4285-8293-71D213FE4D8B}
+		{F6DB8DFD-90C8-465C-BE72-8E0D481A00B4} = {F6DB8DFD-90C8-465C-BE72-8E0D481A00B4}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,6 +30,10 @@ Global
 		{F6DB8DFD-90C8-465C-BE72-8E0D481A00B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6DB8DFD-90C8-465C-BE72-8E0D481A00B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6DB8DFD-90C8-465C-BE72-8E0D481A00B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D7A0BA4-01DB-41CA-8F69-ADC12F3E3C80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D7A0BA4-01DB-41CA-8F69-ADC12F3E3C80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D7A0BA4-01DB-41CA-8F69-ADC12F3E3C80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D7A0BA4-01DB-41CA-8F69-ADC12F3E3C80}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
