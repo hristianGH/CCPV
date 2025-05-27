@@ -19,6 +19,9 @@ namespace CCPV.Main.Test
         private readonly ILogger<PortfolioHandler> _logger;
         private readonly PortfolioHandler _handler;
         private readonly TestServer<Startup> _testServer;
+        private static Guid _userId = Guid.NewGuid();
+        private Dictionary<string, string> _headers = new()
+            { { "UserId", _userId.ToString() } };
 
         public PortfolioControllerIntegrationTests(ITestOutputHelper output)
         {
@@ -28,50 +31,44 @@ namespace CCPV.Main.Test
             _mockUserHandler = new Mock<IUserHandler>();
             _logger = new LoggerFactory().CreateLogger<PortfolioHandler>();
             _handler = new PortfolioHandler(_dbContext, _mockUserHandler.Object, _logger);
-            _testServer = new TestServer<Startup>(_output, (typeof(IPortfolioHandler), _handler));
+            _testServer = new TestServer<Startup>((typeof(IPortfolioHandler), _handler));
         }
 
         [Fact]
         public async Task ProcessFromFile_ReturnsPortfolio()
         {
-            // Arrange
             ProcessPortfolioFileRequest request = new()
             {
                 UserId = Guid.NewGuid(),
                 PortfolioName = "TestPortfolio",
                 FilePath = "fakepath.csv"
             };
-            await File.WriteAllTextAsync("fakepath.csv", "BTC,0.5,10000\nETH,2,2000");
+            await File.WriteAllTextAsync("fakepath.csv", "1200|USDT|1123.23\n10000000|SHIB|60");
 
-            // Act
-            HttpResponseMessage response = await _testServer.PostAsync("/api/1portfolio/process-from-file", request);
+            HttpResponseMessage response = await _testServer.PostAsync("/api/portfolio/process-from-file", request);
             response.EnsureSuccessStatusCode();
+            // TO DO fix response 
             PortfolioEntity? portfolio = await response.Content.ReadFromJsonAsync<PortfolioEntity>();
 
-            // Assert
             Assert.NotNull(portfolio);
             Assert.Equal("TestPortfolio", portfolio.Name);
             Assert.Equal(2, portfolio.Entries.Count);
 
-            // Cleanup
             File.Delete("fakepath.csv");
         }
 
         [Fact]
         public async Task GetPortfoliosByUserId_ReturnsList()
         {
-            // Arrange
-            Guid userId = Guid.NewGuid();
-            PortfolioEntity portfolio = new() { Id = Guid.NewGuid(), Name = "P1", UserId = userId, CreatedAt = DateTime.UtcNow, Entries = [] };
+            PortfolioEntity portfolio = new() { Id = Guid.NewGuid(), Name = "P1", UserId = _userId, CreatedAt = DateTime.UtcNow, Entries = [] };
             _dbContext.Portfolios.Add(portfolio);
             _dbContext.SaveChanges();
 
-            // Act
-            HttpResponseMessage response = await _testServer.GetAsync($"/api/1portfolio?userId={userId}");
+            HttpResponseMessage response = await _testServer.GetAsync($"/api/portfolio", _headers);
+
             response.EnsureSuccessStatusCode();
             List<PortfolioEntity>? result = await response.Content.ReadFromJsonAsync<List<PortfolioEntity>>();
 
-            // Assert
             Assert.NotNull(result);
             Assert.Single(result);
             Assert.Equal("P1", result[0].Name);
@@ -80,7 +77,6 @@ namespace CCPV.Main.Test
         [Fact]
         public async Task ProcessFromFile_ReturnsPortfolio_WithRealHandler()
         {
-            // Arrange
             ProcessPortfolioFileRequest request = new()
             {
                 UserId = Guid.NewGuid(),
@@ -88,18 +84,50 @@ namespace CCPV.Main.Test
                 FilePath = "fakepath.csv"
             };
 
-            // Create a fake file for the handler to read
-            await File.WriteAllTextAsync("fakepath.csv", "BTC,0.5,10000\nETH,2,2000");
+            await File.WriteAllTextAsync("fakepath.csv", "10|ETH|123.14\n12.12454|BTC|24012.43");
 
-            // Act
-            HttpResponseMessage response = await _testServer.PostAsync("/api/1portfolio/process-from-file", request);
+            HttpResponseMessage response = await _testServer.PostAsync("/api/portfolio/process-from-file", request, _headers);
             response.EnsureSuccessStatusCode();
-            PortfolioEntity? portfolio = await response.Content.ReadFromJsonAsync<PortfolioEntity>();
+            dynamic? result = await response.Content.ReadFromJsonAsync<dynamic>();
 
-            // Assert
-            Assert.NotNull(portfolio);
-            Assert.Equal("TestPortfolio", portfolio.Name);
-            Assert.Equal(2, portfolio.Entries.Count);
+            Assert.NotNull(result);
+            Assert.Equal("Portfolio processing started.", (string)result.message);
+            Assert.True(Guid.TryParse((string)result.portfolioId, out _));
+
+            // Cleanup
+            File.Delete("fakepath.csv");
+        }
+
+        [Fact]
+        public async Task ProcessFromFile_ReturnsPortfolio_WithRealHandler_AfterDbUpdate()
+        {
+            ProcessPortfolioFileRequest request = new()
+            {
+                UserId = Guid.NewGuid(),
+                PortfolioName = "TestPortfolio",
+                FilePath = "fakepath.csv"
+            };
+
+            await File.WriteAllTextAsync("fakepath.csv", "10|ETH|123.14\n12.12454|BTC|24012.43");
+
+            HttpResponseMessage response1 = await _testServer.PostAsync("/api/portfolio/process-from-file", request, _headers);
+            response1.EnsureSuccessStatusCode();
+            dynamic? result1 = await response1.Content.ReadFromJsonAsync<dynamic>();
+
+            Assert.NotNull(result1);
+            Assert.Equal("Portfolio processing started.", (string)result1.message);
+            Assert.True(Guid.TryParse((string)result1.portfolioId, out _));
+
+            // Simulate a delay for the sake of the test
+            await Task.Delay(1000);
+
+            HttpResponseMessage response2 = await _testServer.PostAsync("/api/portfolio/process-from-file", request, _headers);
+            response2.EnsureSuccessStatusCode();
+            dynamic? result2 = await response2.Content.ReadFromJsonAsync<dynamic>();
+
+            Assert.NotNull(result2);
+            Assert.Equal("Portfolio processing started.", (string)result2.message);
+            Assert.True(Guid.TryParse((string)result2.portfolioId, out _));
 
             // Cleanup
             File.Delete("fakepath.csv");

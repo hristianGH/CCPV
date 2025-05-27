@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CCPV.Main.API.Controllers
 {
     [ApiController]
-    [Route("api/1[controller]")]
+    [Route("api/[controller]")]
     public class PortfolioController(ILogger<PortfolioController> logger, IPortfolioHandler portfolioHandler, IUploadHandler uploadHandler) : ControllerBase
     {
         [HttpPost("upload")]
@@ -59,6 +59,7 @@ namespace CCPV.Main.API.Controllers
                     return BadRequest("Portfolio name and file path are required.");
                 }
                 PortfolioEntity portfolio = await portfolioHandler.UploadPortfolioFromPathAsync(request.UserId, request.PortfolioName, request.FilePath);
+                // TO DO make a class response instead of anonymous object
                 return Ok(new
                 {
                     message = "Portfolio processing started.",

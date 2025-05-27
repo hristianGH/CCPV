@@ -5,20 +5,16 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Xunit.Abstractions;
 
 namespace CCPV.Main.Test
 {
     public class TestServer<TStartup> where TStartup : class
     {
-        private readonly ITestOutputHelper _testOutputHelper;
         private readonly (Type type, object obj)[] _diObjects;
 
         public TestServer(
-            ITestOutputHelper testOutputHelper,
             params (Type type, object obj)[] diObjects)
         {
-            _testOutputHelper = testOutputHelper;
             _diObjects = diObjects;
         }
 

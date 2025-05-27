@@ -38,7 +38,7 @@ namespace CCPV.Main.Test
                     return coins;
                 });
 
-            TestServer<Startup> testServer = new(_output, (typeof(ICoinloreApi), mockApi.Object));
+            TestServer<Startup> testServer = new((typeof(ICoinloreApi), mockApi.Object));
 
             // Act
             HttpResponseMessage response = await testServer.GetAsync("/api/coin/by-ids?ids=90,80");
@@ -77,7 +77,7 @@ namespace CCPV.Main.Test
                     return response;
                 });
 
-            TestServer<Startup> testServer = new(_output, (typeof(ICoinloreApi), mockApi.Object));
+            TestServer<Startup> testServer = new((typeof(ICoinloreApi), mockApi.Object));
 
             // Act
             HttpResponseMessage response = await testServer.GetAsync("/api/coin/prices?start=0&limit=3");

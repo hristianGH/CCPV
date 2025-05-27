@@ -7,7 +7,7 @@ namespace CCPV.Main.API.Handler
 {
     public class CoinHandler(ICoinloreApi coinloreApi, IMemoryCache cache, ILogger<CoinHandler> logger) : ICoinHandler
     {
-        private readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(2);
+        private TimeSpan CacheDuration = TimeSpan.FromMinutes(2);
         private const int MaxBatchSize = 100;
         private const string CoinPricesCacheKey = "CoinPrices";
         private const string CoinPriceBySymbolCacheKey = "CoinPriceBySymbol";
