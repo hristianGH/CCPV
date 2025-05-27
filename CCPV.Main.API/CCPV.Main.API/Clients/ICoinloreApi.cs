@@ -8,5 +8,8 @@ namespace CCPV.Main.API.Clients
     {
         [Get("/tickers/")]
         Task<CoinloreResponse> GetTickersAsync([FromQuery] int currentStart, [FromQuery] int batchSize);
+
+        [Get("/ticker/")]
+        Task<List<CoinloreCoin>> GetTickersByIdsAsync([FromQuery] string id);
     }
 }

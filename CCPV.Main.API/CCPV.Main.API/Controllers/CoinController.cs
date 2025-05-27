@@ -30,6 +30,17 @@ namespace CCPV.Main.API.Controllers
                 logger.LogInformation("END: CoinController.GetPrices");
             }
         }
+
+        [HttpGet("by-ids")]
+        public async Task<IActionResult> GetPricesByIds([FromQuery] string ids)
+        {
+            if (string.IsNullOrWhiteSpace(ids))
+                return BadRequest("No ids provided.");
+
+            var idList = ids.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var prices = await coinHandler.GetPricesByIdsAsync(idList);
+            return Ok(prices);
+        }
     }
 
 }

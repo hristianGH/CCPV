@@ -4,6 +4,9 @@ namespace CCPV.Main.API.Clients.Models
 {
     public class CoinloreCoin
     {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
         [JsonPropertyName("symbol")]
         public string Symbol { get; set; } = string.Empty;
 

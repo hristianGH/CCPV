@@ -9,6 +9,9 @@ namespace CCPV.Main.API.Handler
     {
         private readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(2);
         private const int MaxBatchSize = 100;
+        private const string CoinPricesCacheKey = "CoinPrices";
+        private const string CoinPriceBySymbolCacheKey = "CoinPriceBySymbol";
+
 
         public async Task<IEnumerable<CoinPrice>> GetPricesAsync(bool forceRefresh, int start, int limit)
         {
@@ -44,14 +47,18 @@ namespace CCPV.Main.API.Handler
                         logger.LogWarning("No more data available from Coinlore API.");
                         break;
                     }
-
                     allPrices.AddRange(response.Data.Select(e => new CoinPrice
                     {
+                        Id = e.Id,
                         Symbol = e.Symbol,
                         Name = e.Name,
                         PriceUsd = e.PriceUsd
                     }));
-
+                    foreach (CoinPrice coin in allPrices)
+                    {
+                        string coinKey = GetCoinCacheKey(coin.Symbol);
+                        cache.Set(coinKey, coin, CacheDuration);
+                    }
                     currentStart += batchSize;
                     remaining -= batchSize;
                 }
@@ -72,9 +79,56 @@ namespace CCPV.Main.API.Handler
             }
         }
 
+        public async Task<IEnumerable<CoinPrice>> GetPricesByIdsAsync(IEnumerable<string> ids)
+        {
+            List<string> idList = ids.Distinct().ToList();
+            List<CoinPrice> result = [];
+            List<string> idsToFetch = [];
+
+            foreach (string? id in idList)
+            {
+                string coinKey = $"CoinPriceById_{id}";
+                if (cache.TryGetValue(coinKey, out CoinPrice? cachedCoin) && cachedCoin != null)
+                {
+                    result.Add(cachedCoin);
+                }
+                else
+                {
+                    idsToFetch.Add(id);
+                }
+            }
+
+            if (idsToFetch.Count > 0)
+            {
+                string idsParam = string.Join(",", idsToFetch);
+                List<CoinloreCoin> apiResult = await coinloreApi.GetTickersByIdsAsync(idsParam);
+                if (apiResult != null)
+                {
+                    foreach (CoinloreCoin coin in apiResult)
+                    {
+                        CoinPrice coinPrice = new()
+                        {
+                            Id = coin.Id,
+                            Symbol = coin.Symbol,
+                            Name = coin.Name,
+                            PriceUsd = coin.PriceUsd
+                        };
+                        string coinKey = $"CoinPriceById_{coin.Id}";
+                        cache.Set(coinKey, coinPrice, CacheDuration);
+                        result.Add(coinPrice);
+                    }
+                }
+            }
+            return result;
+        }
+
         private static string GetCacheKey(int start, int limit)
         {
             return $"{CoinPricesCacheKey}_{start}_{limit}";
+        }
+        private static string GetCoinCacheKey(string symbol)
+        {
+            return $"{CoinPriceBySymbolCacheKey}_{symbol}";
         }
     }
 }
