@@ -4,6 +4,8 @@ using CCPV.Main.API.Handler;
 using CCPV.Main.API.Metrics;
 using CCPV.Main.API.Middleware;
 using CCPV.Main.API.Misc;
+using CCPV.Main.Background;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using Refit;
@@ -27,6 +29,10 @@ public class Startup
             options.UseSqlServer(Environment.GetEnvironmentVariable(Constants.RemoteSqlConnection) ??
             _configuration.GetConnectionString(Constants.DefaultConnection)));
 
+        services.AddHangfire(config =>
+    config.UseSqlServerStorage(_configuration.GetConnectionString(Constants.DefaultConnection)));
+        services.AddHangfireServer();
+
         services.AddRefitClient<ICoinloreApi>()
         .ConfigureHttpClient(c =>
         {
@@ -38,10 +44,17 @@ public class Startup
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
 
-        // Register your services and metrics here
+        // Handlers
         services.AddScoped<IPortfolioHandler, PortfolioHandler>();
         services.AddScoped<IUserHandler, UserHandler>();
+        services.AddScoped<IUploadHandler, UploadHandler>();
+
+        // Metrics and Prometheus
         services.AddScoped<APIMetricsCollector>();
+
+        //Background jobs 
+        services.AddScoped<IBackgroundJob, MetricsLoggingBackgroundJob>();
+
     }
 
     public void Configure(IApplicationBuilder app)
@@ -75,5 +88,9 @@ public class Startup
             endpoints.MapControllers();
             endpoints.MapMetrics();
         });
+        app.UseHangfireDashboard();
+
+        BackgroundJobFactory.RegisterRecurringJobs(app.ApplicationServices);
+
     }
 }

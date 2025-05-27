@@ -11,7 +11,8 @@ namespace CCPV.Main.API.Handler
         private const string _finalFileName = "final-uploaded-file.dat";
         private const string _uploads = "Uploads";
 
-        ///// <inheritdoc/>
+        //TODO REMOVE
+
         //public async Task LightweightUpload(string uploadId, IFormFile file)
         //{
         //    string dir = CreateDirAsync(uploadId);
@@ -52,84 +53,135 @@ namespace CCPV.Main.API.Handler
         /// <inheritdoc/>
         public async Task InitiateHeavyUpload(string uploadId, int totalChunks)
         {
-            CreateDirAsync(uploadId);
-            UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
-            if (statusEntity != null)
+            try
             {
-                throw new InvalidOperationException($"Upload with ID {uploadId} already exists. Please use a unique uploadId.");
+                logger.LogInformation($"START: UploadHandler.InitiateHeavyUpload for uploadId: {uploadId}. totalChunks: {totalChunks}");
+                CreateDirAsync(uploadId);
+                UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
+                if (statusEntity != null)
+                {
+                    throw new InvalidOperationException($"Upload with ID {uploadId} already exists. Please use a unique uploadId.");
+                }
+                statusEntity = new UploadStatusEntity
+                {
+                    UploadId = uploadId,
+                    LastUpdated = DateTime.UtcNow,
+                    TotalChunks = totalChunks
+                };
+                db.UploadStatuses.Add(statusEntity);
+                await db.SaveChangesAsync();
             }
-            statusEntity = new UploadStatusEntity
+            catch (Exception ex)
             {
-                UploadId = uploadId,
-                LastUpdated = DateTime.UtcNow,
-                TotalChunks = totalChunks
-            };
-            db.UploadStatuses.Add(statusEntity);
-            await db.SaveChangesAsync();
+                logger.LogError(ex, $"ERROR: UploadHandler.InitiateHeavyUpload for uploadId: {uploadId}. totalChunks: {totalChunks}");
+            }
+            finally
+            {
+                logger.LogInformation($"END: UploadHandler.InitiateHeavyUpload for uploadId: {uploadId}. totalChunks: {totalChunks}");
+            }
         }
 
         /// <inheritdoc/>
         public async Task UploadChunk(string uploadId, int chunkNumber, IFormFile fileChunk)
         {
-            string uploadDir = Path.Combine(_uploads, uploadId);
-            string chunkPath = Path.Combine(uploadDir, $"chunk_{chunkNumber}");
+            try
+            {
+                logger.LogInformation($"START: UploadHandler.UploadChunk for uploadId: {uploadId}, chunkNumber: {chunkNumber}");
+                string uploadDir = Path.Combine(_uploads, uploadId);
+                string chunkPath = Path.Combine(uploadDir, $"chunk_{chunkNumber}");
 
-            using FileStream stream = File.Create(chunkPath);
-            await fileChunk.CopyToAsync(stream);
+                using FileStream stream = File.Create(chunkPath);
+                await fileChunk.CopyToAsync(stream);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"ERROR: UploadHandler.UploadChunk for uploadId: {uploadId}, chunkNumber: {chunkNumber}");
+                throw;
+            }
+            finally
+            {
+                logger.LogInformation($"END: UploadHandler.UploadChunk for uploadId: {uploadId}, chunkNumber: {chunkNumber}");
+            }
         }
 
         /// <inheritdoc/>
         public async Task<UploadStatus> FinalizeUpload(string uploadId)
         {
-            string uploadDir = Path.Combine(_uploads, uploadId);
-            string finalFile = Path.Combine(uploadDir, _finalFileName);
-            int totalChunks = Directory.GetFiles(uploadDir, "chunk_*").Length;
-
-            UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
             try
             {
-                ValidateAllChunksExist(uploadDir, statusEntity.TotalChunks);
-                await AssembleChunksAsync(uploadDir, totalChunks, finalFile);
-                string checksum = await CalculateSHA256Async(finalFile);
-                // TO DO this code can be extended to a repository
-                statusEntity.Status = UploadStatusEnum.Completed.ToString();
-                statusEntity.Checksum = checksum;
-                statusEntity.Message = "Upload assembled and verified successfully.";
-                statusEntity.LastUpdated = DateTime.UtcNow;
-                statusEntity.FilePath = uploadDir;
+                logger.LogInformation($"START: UploadHandler.FinalizeUpload for uploadId: {uploadId}");
+                string uploadDir = Path.Combine(_uploads, uploadId);
+                string finalFile = Path.Combine(uploadDir, _finalFileName);
+                int totalChunks = Directory.GetFiles(uploadDir, "chunk_*").Length;
+
+                UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
+                try
+                {
+                    ValidateAllChunksExist(uploadDir, statusEntity.TotalChunks);
+                    await AssembleChunksAsync(uploadDir, totalChunks, finalFile);
+                    string checksum = await CalculateSHA256Async(finalFile);
+                    // TO DO this code can be extended to a repository
+                    statusEntity.Status = UploadStatusEnum.Completed.ToString();
+                    statusEntity.Checksum = checksum;
+                    statusEntity.Message = "Upload assembled and verified successfully.";
+                    statusEntity.LastUpdated = DateTime.UtcNow;
+                    statusEntity.FilePath = uploadDir;
+                }
+                catch (Exception ex)
+                {
+                    //TODO Figure out how to proceed with failed uploads
+                    statusEntity.Status = UploadStatusEnum.Failed.ToString();
+                    statusEntity.Message = $"Failed to process upload: {ex.Message}";
+                    statusEntity.LastUpdated = DateTime.UtcNow;
+                }
+
+                await db.SaveChangesAsync();
+                // Start a background job to process the final file
+                return new()
+                {
+                    Status = statusEntity.Status,
+                    Checksum = statusEntity.Checksum,
+                    Message = statusEntity.Message,
+                    FilePath = statusEntity.FilePath
+                };
             }
             catch (Exception ex)
             {
-                //TODO Figure out how to proceed with failed uploads
-                statusEntity.Status = UploadStatusEnum.Failed.ToString();
-                statusEntity.Message = $"Failed to process upload: {ex.Message}";
-                statusEntity.LastUpdated = DateTime.UtcNow;
+                logger.LogError(ex, $"ERROR: UploadHandler.FinalizeUpload for uploadId: {uploadId}");
+                throw;
             }
-
-            await db.SaveChangesAsync();
-            // Start a background job to process the final file
-            return new()
+            finally
             {
-                Status = statusEntity.Status,
-                Checksum = statusEntity.Checksum,
-                Message = statusEntity.Message,
-                FilePath = statusEntity.FilePath
-            };
+                logger.LogInformation($"END: UploadHandler.FinalizeUpload for uploadId: {uploadId}");
+            }
         }
 
 
         public async Task<UploadStatus> GetStatus(string uploadId)
         {
-            UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
-            return statusEntity != null
-                ? new UploadStatus
-                {
-                    Status = Enum.TryParse(statusEntity.Status, out UploadStatusEnum status)
-                    ? status.ToString() : UploadStatusEnum.Unknown.ToString(),
-                    Checksum = statusEntity.Checksum,
-                    Message = statusEntity.Message,
-                }
-                : throw new KeyNotFoundException($"Upload with ID {uploadId} not found.");
+            try
+            {
+                logger.LogInformation($"START: UploadHandler.GetStatus for uploadId: {uploadId}");
+                UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
+                return statusEntity != null
+                    ? new UploadStatus
+                    {
+                        Status = Enum.TryParse(statusEntity.Status, out UploadStatusEnum status)
+                        ? status.ToString() : UploadStatusEnum.Unknown.ToString(),
+                        Checksum = statusEntity.Checksum,
+                        Message = statusEntity.Message,
+                    }
+                    : throw new KeyNotFoundException($"Upload with ID {uploadId} not found.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"ERROR: UploadHandler.GetStatus for uploadId: {uploadId}");
+                throw;
+            }
+            finally
+            {
+                logger.LogInformation($"END: UploadHandler.GetStatus for uploadId: {uploadId}");
+            }
         }
 
         private void ValidateAllChunksExist(string uploadDir, int totalChunks)

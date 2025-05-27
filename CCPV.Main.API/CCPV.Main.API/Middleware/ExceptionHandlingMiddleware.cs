@@ -28,6 +28,7 @@ namespace CCPV.Main.API.Middleware
                 };
 
                 string json = JsonSerializer.Serialize(response);
+                logger.LogError($"ExceptionHandlingMiddleware: Error Response: {json}");
                 await context.Response.WriteAsync(json);
             }
         }

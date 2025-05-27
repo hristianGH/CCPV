@@ -12,6 +12,7 @@ namespace CCPV.Main.API.Controllers
         [HttpPost("upload")]
         public async Task<IActionResult> UploadPortfolio([FromQuery] string portfolioName, IFormFile file)
         {
+            logger.LogInformation($"START: PortfolioController.UploadPortfolio portfolioName: {portfolioName}");
             if (string.IsNullOrEmpty(portfolioName))
                 return BadRequest("Portfolio name is required.");
 
@@ -38,20 +39,25 @@ namespace CCPV.Main.API.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to processs portfolio");
+                logger.LogError(ex, $"ERROR. PortfolioController.UploadPortfolio portfolioName: {portfolioName}");
                 throw;
+            }
+            finally
+            {
+                logger.LogInformation($"END: PortfolioController.UploadPortfolio portfolioName: {portfolioName}");
             }
         }
 
         [HttpPost("process-from-file")]
         public async Task<IActionResult> ProcessFromFile([FromBody] ProcessPortfolioFileRequest request)
         {
-            if (!System.IO.File.Exists(request.FilePath))
-                return BadRequest("File does not exist.");
-
             try
             {
-                // In real-world, you'd likely queue this
+                logger.LogInformation($"START: PortfolioController.ProcessFromFile {request.ToString()}");
+                if (string.IsNullOrEmpty(request.PortfolioName) || string.IsNullOrEmpty(request.FilePath))
+                {
+                    return BadRequest("Portfolio name and file path are required.");
+                }
                 PortfolioEntity portfolio = await portfolioHandler.UploadPortfolioFromPathAsync(request.UserId, request.PortfolioName, request.FilePath);
                 return Ok(new
                 {
@@ -61,43 +67,89 @@ namespace CCPV.Main.API.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to process portfolio from file.");
-                return StatusCode(500, "Internal error during portfolio processing.");
+                logger.LogError(ex, $"ERROR: PortfolioController.ProcessFromFile {request.ToString()}");
+                throw;
+            }
+            finally
+            {
+                logger.LogInformation($"END: PortfolioController.ProcessFromFile {request.ToString()}");
             }
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetPortfolioById(Guid id)
+        public async Task<IActionResult> GetPortfolioById(Guid portfolioId)
         {
-            if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+            try
             {
-                return BadRequest("UserId header is missing or invalid.");
+                logger.LogInformation($"START: PortfolioController.GetPortfolioById portfolioId: {portfolioId}");
+
+                if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+                {
+                    return BadRequest("UserId header is missing or invalid.");
+                }
+                PortfolioEntity? portfolio = await portfolioHandler.GetNoTrackingPortfolioByIdAsync(portfolioId, userId);
+                if (portfolio == null) return NotFound();
+                return Ok(portfolio);
             }
-            PortfolioEntity? portfolio = await portfolioHandler.GetNoTrackingPortfolioByIdAsync(id, userId);
-            if (portfolio == null) return NotFound();
-            return Ok(portfolio);
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"ERROR: PortfolioController.GetPortfolioById portfolioId: {portfolioId}"); ;
+                throw;
+            }
+            finally
+            {
+                logger.LogInformation($"END: PortfolioController.GetPortfolioById portfolioId: {portfolioId}");
+            }
         }
 
         [HttpGet()]
         public async Task<IActionResult> GetPortfoliosByUserId()
         {
-            if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+            try
             {
-                return BadRequest("UserId header is missing or invalid.");
+                logger.LogInformation("START: PortfolioController.GetPortfoliosByUserId");
+                if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+                {
+                    return BadRequest("UserId header is missing or invalid.");
+                }
+                IEnumerable<PortfolioEntity> portfolios = await portfolioHandler.GetPortfoliosByUserIdAsync(userId);
+                return Ok(portfolios);
             }
-            IEnumerable<PortfolioEntity> portfolios = await portfolioHandler.GetPortfoliosByUserIdAsync(userId);
-            return Ok(portfolios);
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "ERROR: PortfolioController.GetPortfoliosByUserId");
+
+                throw;
+            }
+            finally
+            {
+                logger.LogInformation("END: PortfolioController.GetPortfoliosByUserId");
+            }
         }
 
+
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePortfolio(Guid id)
+        public async Task<IActionResult> DeletePortfolio(Guid portfolioId)
         {
-            if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+            try
             {
-                return BadRequest("UserId header is missing or invalid.");
+                logger.LogInformation($"START: PortfolioController.DeletePortfolio portfolioId: {portfolioId}");
+                if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+                {
+                    return BadRequest("UserId header is missing or invalid.");
+                }
+                await portfolioHandler.DeletePortfolioAsync(userId, portfolioId);
+                return NoContent();
             }
-            await portfolioHandler.DeletePortfolioAsync(userId, id);
-            return NoContent();
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"ERROR: PortfolioController.DeletePortfolio portfolioId: {portfolioId}");
+                throw;
+            }
+            finally
+            {
+                logger.LogInformation($"END: PortfolioController.DeletePortfolio portfolioId: {portfolioId}");
+            }
         }
     }
 }

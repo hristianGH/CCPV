@@ -2,6 +2,7 @@
 {
     interface IBackgroundJob
     {
+        string CronExpression { get; }
         Task ExecuteAsync(CancellationToken cancellationToken);
     }
 }

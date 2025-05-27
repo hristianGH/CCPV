@@ -5,6 +5,7 @@
         Completed,
         Failed,
         Cancelled,
-        Unknown
+        Deleted,
+        Unknown,
     }
 }

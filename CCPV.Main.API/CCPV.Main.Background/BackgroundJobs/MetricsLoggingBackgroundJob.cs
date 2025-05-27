@@ -1,18 +1,20 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace CCPV.Main.Background
+namespace CCPV.Main.Background.BackgroundJobs
 {
-    public class MetricsLoggingService : IBackgroundJob
+    public class MetricsLoggingBackgroundJob : IBackgroundJob
     {
-        private readonly ILogger<MetricsLoggingService> _logger;
+        private readonly ILogger<MetricsLoggingBackgroundJob> _logger;
         private readonly IServiceProvider _serviceProvider;
 
-        public MetricsLoggingService(ILogger<MetricsLoggingService> logger, IServiceProvider serviceProvider)
+        public MetricsLoggingBackgroundJob(ILogger<MetricsLoggingBackgroundJob> logger, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
         }
+        // every 15 minutes
+        public string CronExpression => "*/15 * * * *";
 
         public async Task ExecuteAsync(CancellationToken stoppingToken)
         {

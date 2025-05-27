@@ -12,6 +12,7 @@ namespace CCPV.Main.API.Controllers
         {
             try
             {
+                //TODO make refresh time configurable
                 logger.LogInformation("START: CoinController.GetPrices");
 
                 IEnumerable<Misc.CoinPrice> prices = await coinService.GetPricesAsync(forceRefresh);
