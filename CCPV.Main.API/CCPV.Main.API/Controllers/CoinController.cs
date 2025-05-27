@@ -5,17 +5,18 @@ namespace CCPV.Main.API.Controllers
 {
     [ApiController]
     [Route("api/coin")]
-    public class CoinController(ICoinHandler coinService, ILogger<CoinController> logger) : ControllerBase
+    public class CoinController(ICoinHandler coinHandler, ILogger<CoinController> logger) : ControllerBase
     {
         [HttpGet("prices")]
-        public async Task<IActionResult> GetPrices([FromQuery] bool forceRefresh = false)
+        public async Task<IActionResult> GetPrices(
+                    [FromQuery] bool forceRefresh = false,
+                    [FromQuery] int start = 0,
+                    [FromQuery] int limit = 100)
         {
             try
             {
-                //TODO make refresh time configurable
                 logger.LogInformation("START: CoinController.GetPrices");
-
-                IEnumerable<Misc.CoinPrice> prices = await coinService.GetPricesAsync(forceRefresh);
+                IEnumerable<Misc.CoinPrice> prices = await coinHandler.GetPricesAsync(forceRefresh, start, limit);
                 return Ok(prices);
             }
             catch (Exception ex)

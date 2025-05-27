@@ -4,7 +4,7 @@ using CCPV.Main.API.Handler;
 using CCPV.Main.API.Metrics;
 using CCPV.Main.API.Middleware;
 using CCPV.Main.API.Misc;
-using CCPV.Main.Background;
+using CCPV.Main.Background.BackgroundJobs;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
@@ -36,7 +36,7 @@ public class Startup
         services.AddRefitClient<ICoinloreApi>()
         .ConfigureHttpClient(c =>
         {
-            c.BaseAddress = new Uri(Constants.CoinloreUri);
+            c.BaseAddress = new Uri(Environment.GetEnvironmentVariable(Constants.CoinloreUri)?? throw new ArgumentNullException());
         });
 
         services.AddMemoryCache();
@@ -48,13 +48,14 @@ public class Startup
         services.AddScoped<IPortfolioHandler, PortfolioHandler>();
         services.AddScoped<IUserHandler, UserHandler>();
         services.AddScoped<IUploadHandler, UploadHandler>();
+        services.AddScoped<ICoinHandler, CoinHandler>();
 
         // Metrics and Prometheus
         services.AddScoped<APIMetricsCollector>();
 
         //Background jobs 
-        services.AddScoped<IBackgroundJob, MetricsLoggingBackgroundJob>();
-
+        //services.AddScoped<IBackgroundJob, MetricsLoggingBackgroundJob>();
+        //services.AddScoped<IBackgroundJob, CleanupFilesBackgroundJob>();
     }
 
     public void Configure(IApplicationBuilder app)
@@ -91,6 +92,5 @@ public class Startup
         app.UseHangfireDashboard();
 
         BackgroundJobFactory.RegisterRecurringJobs(app.ApplicationServices);
-
     }
 }

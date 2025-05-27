@@ -14,7 +14,7 @@ namespace CCPV.Main.Background.BackgroundJobs
             _serviceProvider = serviceProvider;
         }
         // every 15 minutes
-        public string CronExpression => "*/15 * * * *";
+        public string CronExpression => "*/1 * * * *";
 
         public async Task ExecuteAsync(CancellationToken stoppingToken)
         {

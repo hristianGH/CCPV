@@ -3,16 +3,18 @@ import { PORTFOLIO_API } from "../api/config";
 
 const PortfolioDisplay = () => {
   const [portfolio, setPortfolio] = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchPortfolio = async () => {
     try {
+      setError(null); // Reset error state before fetching
       const response = await fetch(PORTFOLIO_API);
       if (!response.ok) throw new Error("Failed to fetch portfolio data!");
       const data = await response.json();
       setPortfolio(data);
     } catch (error) {
       console.error(error);
-      alert("Error fetching portfolio data.");
+      setError("Unable to fetch portfolio data. Please try again later.");
     }
   };
 
@@ -22,6 +24,7 @@ const PortfolioDisplay = () => {
     return () => clearInterval(interval);
   }, []);
 
+  if (error) return <div>{error}</div>;
   if (!portfolio) return <div>Loading...</div>;
 
   return (

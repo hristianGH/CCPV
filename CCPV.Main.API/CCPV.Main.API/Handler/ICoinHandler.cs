@@ -9,6 +9,6 @@ namespace CCPV.Main.API.Handler
         /// </summary>
         /// <param name="forceRefresh">Force refreshing the cache</param>
         /// <returns></returns>
-        Task<IEnumerable<CoinPrice>> GetPricesAsync(bool forceRefresh = false);
+        Task<IEnumerable<CoinPrice>> GetPricesAsync(bool forceRefresh, int start, int limit);
     }
 }
