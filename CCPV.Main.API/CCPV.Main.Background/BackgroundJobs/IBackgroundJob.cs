@@ -1,6 +1,6 @@
-﻿namespace CCPV.Main.Background
+﻿namespace CCPV.Main.Background.BackgroundJobs
 {
-    interface IBackgroundJob
+    public interface IBackgroundJob
     {
         string CronExpression { get; }
         Task ExecuteAsync(CancellationToken cancellationToken);
