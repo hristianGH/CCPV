@@ -40,6 +40,7 @@ public class Startup
 
         // Register your services and metrics here
         services.AddScoped<IPortfolioHandler, PortfolioHandler>();
+        services.AddScoped<IUserHandler, UserHandler>();
         services.AddScoped<APIMetricsCollector>();
     }
 

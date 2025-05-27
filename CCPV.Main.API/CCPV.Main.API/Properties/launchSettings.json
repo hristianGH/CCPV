@@ -5,7 +5,6 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DefaultConnection": "Server=localhost;Database=CCPV.Main;TrustServerCertificate=True;",
         "Coinlore_Uri": "https://api.coinlore.net/api"
       },
       "dotnetRunMessages": true,
