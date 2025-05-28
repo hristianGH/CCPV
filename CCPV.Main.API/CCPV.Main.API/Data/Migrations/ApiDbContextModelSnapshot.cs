@@ -52,10 +52,10 @@ namespace CCPV.Main.API.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,8)");
 
                     b.Property<decimal>("BuyPrice")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,12)");
 
                     b.Property<string>("CoinSymbol")
                         .IsRequired()

@@ -17,7 +17,12 @@ namespace CCPV.Main.API.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Fluent API for relationships (optional if using conventions)
+            modelBuilder.Entity<PortfolioEntryEntity>()
+                .Property(e => e.Amount)
+                .HasColumnType("decimal(18,8)");
+            modelBuilder.Entity<PortfolioEntryEntity>()
+                .Property(e => e.BuyPrice)
+                .HasColumnType("decimal(18,12)");
 
             modelBuilder.Entity<UserEntity>()
                 .HasMany(u => u.Portfolios)

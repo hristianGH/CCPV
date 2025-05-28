@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { PORTFOLIO_API, BASE_URL } from "../api/config";
 
-const COIN_PRICES_API = `${BASE_URL}/api/coin/prices`;
+const COIN_PRICES_BY_SYMBOLS_API = `${BASE_URL}/api/coin/by-symbols`;
 
 const PortfolioDisplay = forwardRef(({ userName }, ref) => {
   const [portfolios, setPortfolios] = useState([]);
@@ -37,9 +37,14 @@ const PortfolioDisplay = forwardRef(({ userName }, ref) => {
     }
   }, [userName]);
 
-  const fetchCoinPrices = useCallback(async () => {
+  const fetchCoinPrices = useCallback(async (portfolioCoins) => {
+    if (!portfolioCoins || portfolioCoins.length === 0) {
+      setCoinPrices({});
+      return {};
+    }
+    const symbols = Array.from(new Set(portfolioCoins.map(entry => entry.CoinSymbol || entry.coinSymbol))).join(",");
     try {
-      const response = await fetch(COIN_PRICES_API, {
+      const response = await fetch(`${COIN_PRICES_BY_SYMBOLS_API}?symbols=${symbols}`, {
         headers: {
           'UserName': userName || 'User'
         }
@@ -94,8 +99,10 @@ const PortfolioDisplay = forwardRef(({ userName }, ref) => {
 
   const fetchAll = useCallback(async () => {
     const arr = await fetchPortfolios();
-    if (arr.length > 0) {
-      await fetchCoinPrices();
+    // Gather all unique coin symbols from all portfolios
+    const allCoins = arr.flatMap(p => (p.Coins || p.coins || []));
+    if (allCoins.length > 0) {
+      await fetchCoinPrices(allCoins);
     }
   }, [fetchPortfolios, fetchCoinPrices]);
 
@@ -194,7 +201,7 @@ const PortfolioDisplay = forwardRef(({ userName }, ref) => {
                   .map((coin) => (
                     <tr key={coin.CoinSymbol || coin.coinSymbol}>
                       <td>{coin.CoinSymbol || coin.coinSymbol}</td>
-                      <td>{coin.BuyPrice || coin.buyPrice}</td>
+                      <td>{(coin.BuyPrice || coin.buyPrice) !== undefined && (coin.BuyPrice || coin.buyPrice) !== null ? Number(coin.BuyPrice || coin.buyPrice).toLocaleString(undefined, { maximumFractionDigits: 10, minimumFractionDigits: 4 }) : '0'}</td>
                       <td>{coin.Amount || coin.amount}</td>
                       <td>{coin.currentPrice !== undefined ? coin.currentPrice : 'N/A'}</td>
                       <td>{coin.currentTotal !== undefined ? coin.currentTotal.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'}</td>

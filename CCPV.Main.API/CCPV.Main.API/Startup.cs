@@ -65,6 +65,7 @@ public class Startup
 
         // Metrics and Prometheus
         services.AddScoped<APIMetricsCollector>();
+        services.AddScoped<CoinSyncBackgroundJob>();
 
         //Background jobs 
         services.AddScoped<IBackgroundJob, MetricsLoggingBackgroundJob>();
@@ -107,6 +108,12 @@ public class Startup
             endpoints.MapMetrics();
         });
         app.UseHangfireDashboard();
+
+        using (IServiceScope scope = app.ApplicationServices.CreateScope())
+        {
+            CoinSyncBackgroundJob coinSyncJob = scope.ServiceProvider.GetRequiredService<CoinSyncBackgroundJob>();
+            coinSyncJob.ExecuteAsync(CancellationToken.None).GetAwaiter().GetResult();
+        }
 
         BackgroundJobFactory.RegisterRecurringJobs(app.ApplicationServices);
     }
