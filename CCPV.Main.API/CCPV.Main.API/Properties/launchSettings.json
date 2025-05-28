@@ -2,7 +2,7 @@
   "profiles": {
     "CCPV.Main.API": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Coinlore_Uri": "https://api.coinlore.net/api"

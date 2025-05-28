@@ -25,6 +25,18 @@ public class Startup
     {
         services.AddControllers();
 
+        // Add CORS policy
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAll",
+                builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+                });
+        });
+
         services.AddDbContext<ApiDbContext>(options =>
             options.UseSqlServer(Environment.GetEnvironmentVariable(Constants.RemoteSqlConnection) ??
             _configuration.GetConnectionString(Constants.DefaultConnection)));
@@ -69,6 +81,9 @@ public class Startup
         app.UseHttpsRedirection();
         app.UseHttpMetrics();
         app.UseRouting();
+
+        // Use CORS policy
+        app.UseCors("AllowAll");
 
         app.Use(async (context, next) =>
         {

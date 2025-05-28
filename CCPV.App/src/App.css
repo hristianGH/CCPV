@@ -1,8 +1,14 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100vw;
+  max-width: 100vw;
+  min-width: 0;
+  margin: 0;
+  padding: 0.5rem;
   text-align: center;
+  background: #181a20;
+  min-height: 100vh;
+  color: #fff;
+  box-sizing: border-box;
 }
 
 .logo {
@@ -39,4 +45,134 @@
 
 .read-the-docs {
   color: #888;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #23263a;
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.8rem;
+  background: #181a20;
+  box-shadow: 0 2px 8px #23263a44;
+  border-radius: 7.2px 7.2px 0 0;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.header h1 {
+  width: 100%;
+  text-align: center;
+  margin: 0;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.profile-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 45%;
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  border: 2px solid #2563eb;
+  box-shadow: 0 2px 8px #2563eb33;
+}
+
+.bordered {
+  border: 2px solid #23263a;
+  border-radius: 10.8px;
+  padding: 1.35rem;
+  margin: 1.35rem 0;
+  background: #23263a;
+  box-shadow: 0 2px 12px #23263a33;
+  color: #fff;
+  max-width: 600px;
+  width: 90vw;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 1rem;
+}
+
+@media (max-width: 900px) {
+  .bordered {
+    border-radius: 0;
+    max-width: 100vw;
+    width: 100vw;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0.5rem 0.1rem;
+    font-size: 0.95rem;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.7rem 0.5rem 0.7rem 0.5rem;
+    font-size: 0.95rem;
+    border-radius: 0;
+  }
+  .profile {
+    margin-top: 0.5rem;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .profile-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1.1rem;
+  }
+  table.bordered-table th, table.bordered-table td {
+    font-size: 0.95rem;
+    padding: 0.3rem 0.3rem;
+    word-break: break-word;
+  }
+  button {
+    font-size: 0.95rem;
+    padding: 0.4rem 0.7rem;
+  }
+  input[type="text"], input[type="number"] {
+    font-size: 0.95rem;
+    padding: 0.3rem 0.5rem;
+    width: 90vw;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 600px) {
+  .bordered {
+    padding: 0.2rem 0.05rem;
+    font-size: 0.9rem;
+  }
+  .header {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.2rem 0.5rem 0.2rem;
+  }
+  .profile-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+  table.bordered-table th, table.bordered-table td {
+    font-size: 0.9rem;
+    padding: 0.2rem 0.1rem;
+  }
+  button {
+    font-size: 0.9rem;
+    padding: 0.3rem 0.5rem;
+  }
+  input[type="text"], input[type="number"] {
+    font-size: 0.9rem;
+    padding: 0.2rem 0.3rem;
+    width: 95vw;
+  }
 }
