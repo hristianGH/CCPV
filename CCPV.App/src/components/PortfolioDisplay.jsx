@@ -119,14 +119,24 @@ const PortfolioDisplay = forwardRef(({ userName }, ref) => {
 
   const ConfigSlide = () => (
     <div style={{
-      position: 'fixed', top: 0, right: showConfig ? 0 : '-300px', width: 300, height: '100%', background: '#fff', boxShadow: '-2px 0 8px #ccc', transition: 'right 0.3s', zIndex: 1000, padding: 24
+      position: 'fixed',
+      top: 0,
+      right: showConfig ? 0 : '-300px',
+      width: 300,
+      height: '100%',
+      background: '#23263a', // dark background
+      color: '#fff', // white text
+      boxShadow: '-2px 0 8px #2563eb88', // blue shadow
+      transition: 'right 0.3s',
+      zIndex: 1000,
+      padding: 24
     }}>
-      <h3>Config</h3>
-      <label>Refresh Interval (min, min 2): </label>
-      <input type="number" min={2} value={pendingInterval} onChange={e => setPendingInterval(Number(e.target.value))} style={{ width: 60 }} />
+      <h3 style={{color: '#fff'}}>Config</h3>
+      <label style={{color: '#fff'}}>Refresh Interval (min, min 2): </label>
+      <input type="number" min={2} value={pendingInterval} onChange={e => setPendingInterval(Number(e.target.value))} style={{ width: 60, background: '#181a20', color: '#fff', border: '1px solid #2563eb', borderRadius: 4, marginLeft: 8 }} />
       <div style={{ marginTop: 16 }}>
-        <button onClick={() => { setRefreshInterval(Math.max(2, pendingInterval)); setShowConfig(false); }}>Save</button>
-        <button style={{ marginLeft: 8 }} onClick={() => setShowConfig(false)}>Cancel</button>
+        <button style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 16px' }} onClick={() => { setRefreshInterval(Math.max(2, pendingInterval)); setShowConfig(false); }}>Save</button>
+        <button style={{ marginLeft: 8, background: '#23263a', color: '#fff', border: '1px solid #2563eb', borderRadius: 4, padding: '6px 16px' }} onClick={() => setShowConfig(false)}>Cancel</button>
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ namespace CCPV.Main.API.Handler
 
                 string cacheKey = GetCacheKey(start, limit);
 
-                if (!forceRefresh && cache.TryGetValue(cacheKey, out IEnumerable<CoinPrice> cached))
+                if (!forceRefresh && cache.TryGetValue(cacheKey, out IEnumerable<CoinPrice>? cached) && cached != null)
                 {
                     return cached;
                 }
@@ -81,9 +81,14 @@ namespace CCPV.Main.API.Handler
         public async Task<IEnumerable<CoinPrice>> GetPricesBySymbolsAsync(IEnumerable<string> symbols)
         {
             IEnumerable<CoinPrice> allCoins = await GetAllCoinsMetadataAsync();
-            Dictionary<string, string> symbolToId = allCoins
-                .Where(c => symbols.Contains(c.Symbol, StringComparer.OrdinalIgnoreCase))
-                .ToDictionary(c => c.Symbol, c => c.Id, StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string> symbolToId = new();
+            foreach (var c in allCoins.Where(c => symbols.Contains(c.Symbol, StringComparer.OrdinalIgnoreCase)))
+            {
+                if (!symbolToId.ContainsKey(c.Symbol))
+                {
+                    symbolToId[c.Symbol] = c.Id;
+                }
+            }
 
             List<string> ids = symbols
                 .Where(s => symbolToId.ContainsKey(s))
@@ -137,7 +142,7 @@ namespace CCPV.Main.API.Handler
 
         public async Task<IEnumerable<CoinPrice>> GetAllCoinsMetadataAsync(bool forceRefresh = false)
         {
-            if (!forceRefresh && cache.TryGetValue(AllCoinsCacheKey, out IEnumerable<CoinPrice> cachedCoins))
+            if (!forceRefresh && cache.TryGetValue(AllCoinsCacheKey, out IEnumerable<CoinPrice>? cachedCoins) && cachedCoins != null)
                 return cachedCoins;
 
             List<CoinPrice> allCoins = [];
