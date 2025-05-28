@@ -10,6 +10,10 @@ namespace CCPV.Main.API.Middleware
         {
             try
             {
+                if (!context.Request.Headers.ContainsKey("UserName"))
+                {
+                    context.Request.Headers.Add("UserName", "default_user");
+                }
                 await next(context);
             }
             catch (Exception ex)

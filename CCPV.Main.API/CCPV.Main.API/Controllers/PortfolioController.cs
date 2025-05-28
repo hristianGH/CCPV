@@ -34,6 +34,11 @@ namespace CCPV.Main.API.Controllers
 
                 return Ok(portfolioResponse);
             }
+            catch (FormatException ex)
+            {
+                logger.LogError(ex, $"ERROR. PortfolioController.UploadPortfolio portfolioName: {portfolioName}");
+                return BadRequest(ex.Message);
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, $"ERROR. PortfolioController.UploadPortfolio portfolioName: {portfolioName}");
@@ -70,30 +75,30 @@ namespace CCPV.Main.API.Controllers
             }
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetPortfolioById(Guid portfolioId)
+        [HttpGet("name")]
+        public async Task<IActionResult> GetPortfolioById([FromQuery] string portfolioName)
         {
             try
             {
-                logger.LogInformation($"START: PortfolioController.GetPortfolioById portfolioId: {portfolioId}");
+                logger.LogInformation($"START: PortfolioController.GetPortfolioById portfolioId: {portfolioName}");
 
                 if (!Request.Headers.TryGetValue("UserName", out StringValues userName) || string.IsNullOrWhiteSpace(userName))
                 {
                     return BadRequest("UserName header is missing or invalid.");
                 }
-                PortfolioResponse? portfolio = await portfolioHandler.GetPortfolioByIdAsync(userName, portfolioId);
+                PortfolioResponse? portfolio = await portfolioHandler.GetPortfolioByNameAsync(userName, portfolioName);
                 if (portfolio == null) return NotFound();
 
                 return Ok(portfolio);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"ERROR: PortfolioController.GetPortfolioById portfolioId: {portfolioId}"); ;
+                logger.LogError(ex, $"ERROR: PortfolioController.GetPortfolioById portfolioId: {portfolioName}"); ;
                 throw;
             }
             finally
             {
-                logger.LogInformation($"END: PortfolioController.GetPortfolioById portfolioId: {portfolioId}");
+                logger.LogInformation($"END: PortfolioController.GetPortfolioById portfolioId: {portfolioName}");
             }
         }
 

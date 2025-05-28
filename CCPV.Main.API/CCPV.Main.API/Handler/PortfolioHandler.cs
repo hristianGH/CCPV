@@ -42,6 +42,11 @@ namespace CCPV.Main.API.Handler
                     PortfolioId = portfolio.Id
                 };
             }
+            catch (FormatException ex)
+            {
+                logger.LogError(ex, $"ERROR: PortfolioHandler.UploadPortfolioAsync userId: {userName} portfolioName: {portfolioName} - Invalid file format.");
+                throw;
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, $"ERROR: PortfolioHandler.UploadPortfolioAsync userId: {userName} portfolioName: {portfolioName}");
@@ -147,26 +152,26 @@ namespace CCPV.Main.API.Handler
             }
         }
 
-        public async Task<PortfolioResponse?> GetPortfolioByIdAsync(string userName, Guid portfolioId)
+        public async Task<PortfolioResponse?> GetPortfolioByNameAsync(string userName, string portfolioName)
         {
             try
             {
-                logger.LogInformation($"START: PortfolioHandler.GetNoTrackingPortfolioByIdAsync userId: {userName} portfolioId: {portfolioId}");
+                logger.LogInformation($"START: PortfolioHandler.GetNoTrackingPortfolioByIdAsync userId: {userName} portfolioId: {portfolioName}");
                 PortfolioEntity? response = await dbContext.Portfolios
                         .AsNoTracking()
                         .Include(p => p.Entries)
-                        .FirstOrDefaultAsync(p => p.Id == portfolioId);
+                        .FirstOrDefaultAsync(p => p.Name == portfolioName);
 
                 return response != null ? MapToPortfolioResponse(response) : null;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"ERROR: PortfolioHandler.GetNoTrackingPortfolioByIdAsync userId: {userName} portfolioId: {portfolioId}");
+                logger.LogError(ex, $"ERROR: PortfolioHandler.GetNoTrackingPortfolioByIdAsync userId: {userName} portfolioId: {portfolioName}");
                 throw;
             }
             finally
             {
-                logger.LogInformation($"END: PortfolioHandler.GetNoTrackingPortfolioByIdAsync userId: {userName} portfolioId: {portfolioId}");
+                logger.LogInformation($"END: PortfolioHandler.GetNoTrackingPortfolioByIdAsync userId: {userName} portfolioId: {portfolioName}");
             }
         }
 
