@@ -1,4 +1,5 @@
-﻿using CCPV.Main.API.Clients;
+﻿using CCPV.Main.API.BackgroundJobs;
+using CCPV.Main.API.Clients;
 using CCPV.Main.API.Data;
 using CCPV.Main.API.Handler;
 using CCPV.Main.API.Metrics;
@@ -48,7 +49,7 @@ public class Startup
         services.AddRefitClient<ICoinloreApi>()
         .ConfigureHttpClient(c =>
         {
-            c.BaseAddress = new Uri(Environment.GetEnvironmentVariable(Constants.CoinloreUri)?? throw new ArgumentNullException());
+            c.BaseAddress = new Uri(Environment.GetEnvironmentVariable(Constants.CoinloreUri) ?? throw new ArgumentNullException());
         });
 
         services.AddMemoryCache();
@@ -66,8 +67,9 @@ public class Startup
         services.AddScoped<APIMetricsCollector>();
 
         //Background jobs 
-        //services.AddScoped<IBackgroundJob, MetricsLoggingBackgroundJob>();
+        services.AddScoped<IBackgroundJob, MetricsLoggingBackgroundJob>();
         //services.AddScoped<IBackgroundJob, CleanupFilesBackgroundJob>();
+        services.AddScoped<IBackgroundJob, CoinSyncBackgroundJob>();
     }
 
     public void Configure(IApplicationBuilder app)

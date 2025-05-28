@@ -16,6 +16,14 @@ namespace CCPV.Main.API.Handler
         /// </summary>
         /// <param name="ids">List of Coinlore IDs</param>
         /// <returns></returns>
-        Task<IEnumerable<CoinPrice>> GetPricesByIdsAsync(IEnumerable<string> ids);
+        Task<IEnumerable<CoinPrice>> GetPricesBySymbolsAsync(IEnumerable<string> symbols);
+
+        /// <summary>
+        /// Gets metadata for all coins, including their current prices.
+        /// </summary>
+        /// <param name="forceRefresh">Force refresh the cache</param>
+        /// <returns></returns>
+        Task<IEnumerable<CoinPrice>> GetAllCoinsMetadataAsync(bool forceRefresh = false);
+
     }
 }

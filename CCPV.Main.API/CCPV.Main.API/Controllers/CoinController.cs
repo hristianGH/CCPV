@@ -31,14 +31,14 @@ namespace CCPV.Main.API.Controllers
             }
         }
 
-        [HttpGet("by-ids")]
-        public async Task<IActionResult> GetPricesByIds([FromQuery] string ids)
+        [HttpGet("by-symbols")]
+        public async Task<IActionResult> GetPricesByIds([FromQuery] string symbols)
         {
-            if (string.IsNullOrWhiteSpace(ids))
+            if (string.IsNullOrWhiteSpace(symbols))
                 return BadRequest("No ids provided.");
 
-            var idList = ids.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            var prices = await coinHandler.GetPricesByIdsAsync(idList);
+            List<string> symbolList = [.. symbols.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+            IEnumerable<Misc.CoinPrice> prices = await coinHandler.GetPricesBySymbolsAsync(symbolList);
             return Ok(prices);
         }
     }

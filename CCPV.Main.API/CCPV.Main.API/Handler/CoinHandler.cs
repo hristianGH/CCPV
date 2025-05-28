@@ -11,7 +11,7 @@ namespace CCPV.Main.API.Handler
         private const int MaxBatchSize = 100;
         private const string CoinPricesCacheKey = "CoinPrices";
         private const string CoinPriceBySymbolCacheKey = "CoinPriceBySymbol";
-
+        private const string AllCoinsCacheKey = "AllCoinMetadata";
 
         public async Task<IEnumerable<CoinPrice>> GetPricesAsync(bool forceRefresh, int start, int limit)
         {
@@ -78,8 +78,21 @@ namespace CCPV.Main.API.Handler
                 logger.LogInformation($"END: CoinHandler.GetPricesAsync forceRefresh: {forceRefresh}");
             }
         }
+        public async Task<IEnumerable<CoinPrice>> GetPricesBySymbolsAsync(IEnumerable<string> symbols)
+        {
+            IEnumerable<CoinPrice> allCoins = await GetAllCoinsMetadataAsync();
+            Dictionary<string, string> symbolToId = allCoins
+                .Where(c => symbols.Contains(c.Symbol, StringComparer.OrdinalIgnoreCase))
+                .ToDictionary(c => c.Symbol, c => c.Id, StringComparer.OrdinalIgnoreCase);
 
-        public async Task<IEnumerable<CoinPrice>> GetPricesByIdsAsync(IEnumerable<string> ids)
+            List<string> ids = symbols
+                .Where(s => symbolToId.ContainsKey(s))
+                .Select(s => symbolToId[s])
+                .ToList();
+
+            return await GetPricesByIdsAsync(ids);
+        }
+        private async Task<IEnumerable<CoinPrice>> GetPricesByIdsAsync(IEnumerable<string> ids)
         {
             List<string> idList = ids.Distinct().ToList();
             List<CoinPrice> result = [];
@@ -120,6 +133,38 @@ namespace CCPV.Main.API.Handler
                 }
             }
             return result;
+        }
+
+        public async Task<IEnumerable<CoinPrice>> GetAllCoinsMetadataAsync(bool forceRefresh = false)
+        {
+            if (!forceRefresh && cache.TryGetValue(AllCoinsCacheKey, out IEnumerable<CoinPrice> cachedCoins))
+                return cachedCoins;
+
+            List<CoinPrice> allCoins = [];
+            int start = 0;
+            const int batchSize = 100;
+
+            while (true)
+            {
+                CoinloreResponse response = await coinloreApi.GetTickersAsync(start, batchSize);
+                if (response?.Data == null || !response.Data.Any())
+                    break;
+
+                allCoins.AddRange(response.Data.Select(c => new CoinPrice
+                {
+                    Id = c.Id,
+                    Symbol = c.Symbol,
+                    Name = c.Name
+                }));
+
+                if (response.Data.Count < batchSize)
+                    break;
+
+                start += batchSize;
+            }
+
+            cache.Set(AllCoinsCacheKey, allCoins, TimeSpan.FromDays(1));
+            return allCoins;
         }
 
         private static string GetCacheKey(int start, int limit)
