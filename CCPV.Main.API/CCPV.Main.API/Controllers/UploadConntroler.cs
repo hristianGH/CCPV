@@ -23,10 +23,14 @@ namespace CCPV.Main.API.Controllers
                 {
                     return BadRequest("Invalid parameters.");
                 }
+                if (!Request.Headers.TryGetValue("UserName", out Microsoft.Extensions.Primitives.StringValues userName) || string.IsNullOrWhiteSpace(userName))
+                {
+                    return BadRequest("UserName header is missing or invalid.");
+                }
                 // TODO add user passing here so we can restrict access to the uploadId
                 if (chunkNumber == 0)
                 {
-                    await uploadHandler.InitiateHeavyUpload(uploadId, totalChunks);
+                    await uploadHandler.InitiateHeavyUpload(uploadId, totalChunks, userName);
                 }
                 try
                 {
@@ -58,9 +62,12 @@ namespace CCPV.Main.API.Controllers
                 logger.LogInformation($"START: UploadController.CompleteUpload {request.ToString()}");
                 if (string.IsNullOrEmpty(request.UploadId))
                     return BadRequest("UploadId required");
-                // TODO add user passing here so we can restrict access to the uploadId
 
-                UploadStatus response = await uploadHandler.FinalizeUpload(request.UploadId);
+                if (!Request.Headers.TryGetValue("UserName", out Microsoft.Extensions.Primitives.StringValues userName) || string.IsNullOrWhiteSpace(userName))
+                {
+                    return BadRequest("UserName header is missing or invalid.");
+                }
+                UploadStatus response = await uploadHandler.FinalizeUpload(request.UploadId, userName);
 
                 return Accepted(new
                 {

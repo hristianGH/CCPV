@@ -1,7 +1,7 @@
-using CCPV.Main.API.Data.Entities;
 using CCPV.Main.API.Handler;
 using CCPV.Main.API.Misc;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 
 namespace CCPV.Main.API.Controllers
 {
@@ -20,22 +20,19 @@ namespace CCPV.Main.API.Controllers
                 return BadRequest("File is required.");
             if (file.Length > 8 * 1024 * 1024)
 
+
             {
                 return BadRequest("File size exceeds the maximum limit of 8MB. Please use api/upload instead");
             }
-            if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+            if (!Request.Headers.TryGetValue("UserName", out StringValues userName) || string.IsNullOrWhiteSpace(userName))
             {
-                return BadRequest("UserId header is missing or invalid.");
+                return BadRequest("UserName header is missing or invalid.");
             }
             try
             {
-                await portfolioHandler.UploadPortfolioAsync(userId, portfolioName, file);
+                ProcessPortfolioResponse portfolioResponse = await portfolioHandler.UploadPortfolioAsync(userName, portfolioName, file);
 
-                return Ok(new
-                {
-                    message = "Portfolio uploaded successfully.",
-                    portfolioName = portfolioName
-                });
+                return Ok(portfolioResponse);
             }
             catch (Exception ex)
             {
@@ -54,17 +51,13 @@ namespace CCPV.Main.API.Controllers
             try
             {
                 logger.LogInformation($"START: PortfolioController.ProcessFromFile {request.ToString()}");
-                if (string.IsNullOrEmpty(request.PortfolioName) || string.IsNullOrEmpty(request.FilePath))
+                if (!Request.Headers.TryGetValue("UserName", out StringValues userName) || string.IsNullOrWhiteSpace(userName))
                 {
-                    return BadRequest("Portfolio name and file path are required.");
+                    return BadRequest("UserName header is missing or invalid.");
                 }
-                PortfolioEntity portfolio = await portfolioHandler.UploadPortfolioFromPathAsync(request.UserId, request.PortfolioName, request.FilePath);
+                ProcessPortfolioResponse portfolioResponse = await portfolioHandler.UploadPortfolioFromPathAsync(userName, request.PortfolioName, request.FilePath);
                 // TO DO make a class response instead of anonymous object
-                return Ok(new
-                {
-                    message = "Portfolio processing started.",
-                    portfolioId = portfolio.Id
-                });
+                return Ok(portfolioResponse);
             }
             catch (Exception ex)
             {
@@ -84,12 +77,13 @@ namespace CCPV.Main.API.Controllers
             {
                 logger.LogInformation($"START: PortfolioController.GetPortfolioById portfolioId: {portfolioId}");
 
-                if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+                if (!Request.Headers.TryGetValue("UserName", out StringValues userName) || string.IsNullOrWhiteSpace(userName))
                 {
-                    return BadRequest("UserId header is missing or invalid.");
+                    return BadRequest("UserName header is missing or invalid.");
                 }
-                PortfolioEntity? portfolio = await portfolioHandler.GetNoTrackingPortfolioByIdAsync(portfolioId, userId);
+                PortfolioResponse? portfolio = await portfolioHandler.GetPortfolioByIdAsync(userName, portfolioId);
                 if (portfolio == null) return NotFound();
+
                 return Ok(portfolio);
             }
             catch (Exception ex)
@@ -109,11 +103,11 @@ namespace CCPV.Main.API.Controllers
             try
             {
                 logger.LogInformation("START: PortfolioController.GetPortfoliosByUserId");
-                if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+                if (!Request.Headers.TryGetValue("UserName", out StringValues userName) || string.IsNullOrWhiteSpace(userName))
                 {
-                    return BadRequest("UserId header is missing or invalid.");
+                    return BadRequest("UserName header is missing or invalid.");
                 }
-                IEnumerable<PortfolioEntity> portfolios = await portfolioHandler.GetPortfoliosByUserIdAsync(userId);
+                IEnumerable<PortfolioResponse> portfolios = await portfolioHandler.GetPortfoliosByUserIdAsync(userName);
                 return Ok(portfolios);
             }
             catch (Exception ex)
@@ -135,11 +129,11 @@ namespace CCPV.Main.API.Controllers
             try
             {
                 logger.LogInformation($"START: PortfolioController.DeletePortfolio portfolioId: {portfolioId}");
-                if (!Request.Headers.TryGetValue("UserId", out Microsoft.Extensions.Primitives.StringValues userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+                if (!Request.Headers.TryGetValue("UserName", out StringValues userName) || string.IsNullOrWhiteSpace(userName))
                 {
-                    return BadRequest("UserId header is missing or invalid.");
+                    return BadRequest("UserName header is missing or invalid.");
                 }
-                await portfolioHandler.DeletePortfolioAsync(userId, portfolioId);
+                await portfolioHandler.DeletePortfolioAsync(userName, portfolioId);
                 return NoContent();
             }
             catch (Exception ex)

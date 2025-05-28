@@ -11,47 +11,8 @@ namespace CCPV.Main.API.Handler
         private const string _finalFileName = "final-uploaded-file.dat";
         private const string _uploads = "Uploads";
 
-        //TODO REMOVE
-
-        //public async Task LightweightUpload(string uploadId, IFormFile file)
-        //{
-        //    string dir = CreateDirAsync(uploadId);
-        //    UploadStatusEntity? statusEntity = await db.UploadStatuses.FindAsync(uploadId);
-        //    if (statusEntity != null)
-        //    {
-        //        throw new InvalidOperationException($"Upload with ID {uploadId} already exists. Please use a unique uploadId.");
-        //    }
-        //    statusEntity = new UploadStatusEntity
-        //    {
-        //        UploadId = uploadId,
-        //        LastUpdated = DateTime.UtcNow,
-        //        TotalChunks = 1
-        //    };
-        //    db.UploadStatuses.Add(statusEntity);
-        //    await db.SaveChangesAsync();
-        //    try
-        //    {
-        //        using FileStream stream = File.Create(dir);
-        //        await file.CopyToAsync(stream);
-
-        //        string checksum = await CalculateSHA256Async(dir);
-        //        statusEntity.Status = UploadStatusEnum.Completed.ToString();
-        //        statusEntity.Checksum = checksum;
-        //        statusEntity.Message = "Upload assembled and verified successfully.";
-        //        statusEntity.LastUpdated = DateTime.UtcNow;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        //TODO Figure out how to proceed with failed uploads
-        //        statusEntity.Status = UploadStatusEnum.Failed.ToString();
-        //        statusEntity.Message = $"Failed to process upload: {ex.Message}";
-        //        statusEntity.LastUpdated = DateTime.UtcNow;
-        //        throw;
-        //    }
-        //}
-
         /// <inheritdoc/>
-        public async Task InitiateHeavyUpload(string uploadId, int totalChunks)
+        public async Task InitiateHeavyUpload(string uploadId, int totalChunks, string userName)
         {
             try
             {
@@ -62,6 +23,7 @@ namespace CCPV.Main.API.Handler
                 {
                     throw new InvalidOperationException($"Upload with ID {uploadId} already exists. Please use a unique uploadId.");
                 }
+                // TODO limit the upload to the userName, so that users cannot access other users uploads
                 statusEntity = new UploadStatusEntity
                 {
                     UploadId = uploadId,
@@ -105,10 +67,11 @@ namespace CCPV.Main.API.Handler
         }
 
         /// <inheritdoc/>
-        public async Task<UploadStatus> FinalizeUpload(string uploadId)
+        public async Task<UploadStatus> FinalizeUpload(string uploadId, string userName)
         {
             try
             {
+                // TODO limit the upload to the userName, so that users cannot access other users uploads
                 logger.LogInformation($"START: UploadHandler.FinalizeUpload for uploadId: {uploadId}");
                 string uploadDir = Path.Combine(_uploads, uploadId);
                 string finalFile = Path.Combine(uploadDir, _finalFileName);

@@ -4,15 +4,6 @@ namespace CCPV.Main.API.Handler
 {
     public interface IUploadHandler
     {
-        ///// <summary>
-        /////  Lightweight upload handler for small files (up to 8MB) Initiates and completes the file upload.
-        ///// </summary>
-        ///// <param name="uploadId">Id of the uploaded file</param>
-        ///// <param name="file">The file content </param>
-        ///// <returns></returns>
-        ///// <exception cref="InvalidOperationException"></exception>
-        //public Task LightweightUpload(string uploadId, IFormFile file);
-
         /// <summary>
         /// Initiates a heavy upload by creating a directory for the upload and saving the initial status of the entity in the database.
         /// </summary>
@@ -20,7 +11,7 @@ namespace CCPV.Main.API.Handler
         /// <param name="totalChunks">Total number of expected chunks after upload is finished</param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public Task InitiateHeavyUpload(string uploadId, int totalChunks);
+        public Task InitiateHeavyUpload(string uploadId, int totalChunks, string userName);
 
         /// <summary>
         /// Uploads a file chunk to a folder based on upload id
@@ -36,7 +27,7 @@ namespace CCPV.Main.API.Handler
         /// </summary>
         /// <param name="uploadId">Id of the uploaded file</param>
         /// <returns></returns>
-        public Task<UploadStatus> FinalizeUpload(string uploadId);
+        public Task<UploadStatus> FinalizeUpload(string uploadId, string userName);
 
         /// <summary>
         /// Gets the metadata of the Uploaded file

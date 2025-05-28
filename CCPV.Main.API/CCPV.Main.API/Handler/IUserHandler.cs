@@ -4,5 +4,6 @@
     {
         Task<bool> IsUserAdminAsync(Guid userId);
         Task<bool> IsUserPortfolioOwnerAsync(Guid userId, Guid portfolioId);
+        Task<Guid> GetOrCreateUserIdAsync(string userName);
     }
 }
